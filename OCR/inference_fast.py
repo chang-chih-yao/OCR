@@ -3,90 +3,16 @@ from datetime import datetime
 import configparser
 import numpy as np
 import os
-import shutil
 import cv2
 import sys
-from PIL import Image
 from PIL import ImageGrab
-from pynput.keyboard import Key
-from pynput.mouse import Button
-from pynput import keyboard
-import pynput
 
 from script.load_model import load_model
 from script.cfg import load_cfg, build_cfg, modify_cfg
+from script.windows_api import detect_nx
+from script.keyboard_mouse_ctrl import on_press, my_type, mouse_click, open_vim, quit_vim
 
 # ------------------------- def ---------------------------- #
-def on_press(key):
-    global exit_flag
-    if key == Key.backspace:
-        print('exit()')
-        exit_flag = 1
-        return False
-
-def my_type(my_str = ''):
-    no_shift_char = "abcdefghijklmnopqrstuvwxyz0123456789`-=[]\\;',./"      # 47 chars
-    shift_char    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'       # 47 chars
-    if(my_str != ''):
-        if exit_flag == 1:
-            exit()
-        if (my_str == ' '):
-            my_keyboard.type(' ')
-            time.sleep(type_speed)
-            return
-        elif (my_str == 'pagedown_key'):
-            my_keyboard.press(Key.ctrl)
-            my_keyboard.press('f')
-            my_keyboard.release('f')
-            my_keyboard.release(Key.ctrl)
-            time.sleep(cmd_speed)
-            return
-        elif (my_str == 'enter_key'):
-            my_keyboard.press(Key.enter)
-            my_keyboard.release(Key.enter)
-            time.sleep(cmd_speed)
-            return
-        
-        for i in range(len(my_str)):
-            if exit_flag == 1:
-                exit()
-            if my_str[i] in shift_char:
-                my_keyboard.press(Key.shift)
-                my_keyboard.type(no_shift_char[shift_char.find(my_str[i])])
-                my_keyboard.release(Key.shift)
-                time.sleep(type_speed)
-            else:
-                my_keyboard.type(my_str[i])
-                time.sleep(type_speed)
-
-def mouse_click():
-    my_mouse.position = ((x1+x2)//2, (y1+y2)//2)
-    time.sleep(cmd_speed)
-    my_mouse.click(Button.left)
-    time.sleep(type_speed)
-
-def open_vim(my_str='', recursive_mode=False):
-    if my_str != '':
-        if not recursive_mode:
-            my_type('vim -u NONE -R ' + my_str)
-        else:
-            my_type('vim -u NONE ' + my_str)
-        my_type('enter_key')
-        my_type(':set nu')
-        my_type('enter_key')
-        # my_type(':1')
-        # my_type('enter_key')
-        time.sleep(0.5)
-
-def quit_vim():
-    my_keyboard.press(Key.esc)
-    my_keyboard.release(Key.esc)
-    time.sleep(type_speed)
-    my_type(':q!')
-    time.sleep(type_speed)
-    my_type('enter_key')
-    time.sleep(cmd_speed)
-
 def recursive_vim():
     my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
     my_type('enter_key')
@@ -124,7 +50,10 @@ def screen(x1, y1, x2, y2, threshold=1):
     ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
     return th1
 
-def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
+def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True, vim_text_bias_width=8):
+    '''
+    vim_text_bias_width: There are 8 chars(w*8 pixels) in front of the text after you use vim -u NONE open file and :set nu
+    '''
     global log_cou, wait_correct_num
     temp_s = ''
     x_start = w*0
@@ -162,12 +91,12 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
                         # print(line_cou)
                         if front_str == '{:>7d} '.format(line_cou):
                             space_cou = 0
-                            if wait_correct_num == 1:
-                                wait_correct_num = 0
+                            if wait_correct_num == True:
+                                wait_correct_num = False
                             if line_cou != 1:
                                 temp_s += '\n'
                         else:
-                            wait_correct_num = 1
+                            wait_correct_num = True
                             line_cou -= 1
                             # print('skip this line')
                             break
@@ -182,7 +111,7 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
                         return temp_s, file_eof, line_cou
                     else:
                         line_cou -= 1
-                        if wait_correct_num == 1:
+                        if wait_correct_num == True:
                             break
                         # print('more than 1 line')
                         if space_cou == 0:
@@ -229,7 +158,17 @@ def single_file_mode(name):
 
     quit_vim()
     f.close()
-# ------------------------- def ---------------------------- #
+
+
+# --------------------------- detect nx ------------------------ #
+nx_location = detect_nx()
+another_monitor = False
+if nx_location == -9999:
+    print('not found NoMachine!!!')
+elif nx_location > 2000:
+    another_monitor = True
+    print('nx in another monitor')
+
 
 # --------------------------- load cfg and model ------------------------ #
 config = load_cfg()
@@ -237,7 +176,7 @@ config = load_cfg()
 #     print(key, config['cust'][key])
 difference = int(config['cust']['difference'])
 char_list, difference, category, img_arr = load_model(difference)
-# --------------------------- load cfg and model ------------------------ #
+
 
 x1 = int(config['cust']['x1'])
 y1 = int(config['cust']['y1'])
@@ -248,22 +187,14 @@ y2 = int(config['cust']['y2'])
 w = 9
 h = 18
 
-vim_text_bias_width = 8         # There are 8 chars(w*8 pixels) in front of the text after you use vim -u NONE open file and :set nu
-
 vertical_num = (y2 - y1) // h
 horizontal_num = (x2 - x1) // w
 
-type_speed = float(config['cust']['type_speed'])
-cmd_speed = float(config['cust']['cmd_speed'])
-
 log_flag = 0          # flag : log on -> log_flag = 1
 log_cou = 0
-wait_correct_num = 0  # flag
+wait_correct_num = False  # flag
 
 export_file_root = 'export/'
-
-my_keyboard = pynput.keyboard.Controller()
-my_mouse = pynput.mouse.Controller()
 
 
 # -------------------- START -------------------- #
@@ -280,28 +211,17 @@ while True:
     else:
         break
 
-
-exit_flag = 0
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
-
 print('---------------------------')
-# print('3')
-# time.sleep(1)
-# print('2')
-# time.sleep(1)
-# print('1')
-# time.sleep(1)
 print('Start')
 print('---------------------------')
 
 time.sleep(0.5)
-mouse_click()
+mouse_click((x1+x2)//2, (y1+y2)//2)
 
 now = datetime.now()
 export_dir_name = export_file_root + now.strftime("%Y%m%d_%H_%M_%S") + '/'
 os.mkdir(export_dir_name)
-print('create ' + export_dir_name)
+print('create folder : ' + export_dir_name)
 
 
 if choice == '1':
@@ -330,7 +250,7 @@ elif choice == '2':
             exit()
 
     print(dir_arr)
-    mouse_click()
+    mouse_click((x1+x2)//2, (y1+y2)//2)
 
     for item in dir_arr:
         my_type('wc -l < ' + item)
@@ -362,4 +282,3 @@ elif choice == '3':
     f.close()
 
 print('DONE')
-cv2.destroyAllWindows()

@@ -3,92 +3,17 @@ from datetime import datetime
 import configparser
 import numpy as np
 import os
-import shutil
 import cv2
 import sys
 from filecmp import cmp
-from PIL import Image
 from PIL import ImageGrab
-from pynput.keyboard import Key
-from pynput.mouse import Button
-from pynput import keyboard
-import pynput
-import win32gui
 
 from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import load_cfg, build_cfg, modify_cfg
-
-def on_press(key):
-    global exit_flag
-    if key == Key.backspace:
-        print('exit()')
-        exit_flag = 1
-        return False
-
-def my_type(my_str = ''):
-    no_shift_char = "abcdefghijklmnopqrstuvwxyz0123456789`-=[]\\;',./"      # 47 chars
-    shift_char    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'       # 47 chars
-    if(my_str != ''):
-        if exit_flag == 1:
-            exit()
-        if (my_str == ' '):
-            my_keyboard.type(' ')
-            time.sleep(type_speed)
-            return
-        elif (my_str == 'pagedown_key'):
-            my_keyboard.press(Key.ctrl)
-            my_keyboard.press('f')
-            my_keyboard.release('f')
-            my_keyboard.release(Key.ctrl)
-            time.sleep(cmd_speed)
-            return
-        elif (my_str == 'enter_key'):
-            my_keyboard.press(Key.enter)
-            my_keyboard.release(Key.enter)
-            time.sleep(cmd_speed)
-            return
-        
-        for i in range(len(my_str)):
-            if exit_flag == 1:
-                exit()
-            if my_str[i] in shift_char:
-                my_keyboard.press(Key.shift)
-                my_keyboard.type(no_shift_char[shift_char.find(my_str[i])])
-                my_keyboard.release(Key.shift)
-                time.sleep(type_speed)
-            else:
-                my_keyboard.type(my_str[i])
-                time.sleep(type_speed)
-
-def mouse_click():
-    my_mouse.position = ((x1+x2)//2, (y1+y2)//2)
-    time.sleep(cmd_speed)
-    my_mouse.click(Button.left)
-    time.sleep(type_speed)
-
-def open_vim(my_str='', recursive_mode=False):
-    if my_str != '':
-        if not recursive_mode:
-            my_type('vim -u NONE -R ' + my_str)
-        else:
-            my_type('vim -u NONE ' + my_str)
-        my_type('enter_key')
-        my_type(':set nu')
-        my_type('enter_key')
-        # my_type(':1')
-        # my_type('enter_key')
-        time.sleep(0.5)
-
-def quit_vim():
-    my_keyboard.press(Key.esc)
-    my_keyboard.release(Key.esc)
-    time.sleep(type_speed)
-    my_type(':q!')
-    time.sleep(type_speed)
-    my_type('enter_key')
-    time.sleep(cmd_speed)
+from script.windows_api import detect_nx
+from script.keyboard_mouse_ctrl import on_press, my_type, mouse_click, open_vim, quit_vim
 
 def screen(x1, y1, x2, y2, threshold=1):
     print(x1, y1, x2, y2)
@@ -189,30 +114,15 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
     return temp_s, file_eof, line_cou
 
 
-def detect_nx():
-    hWndList = []
-    win32gui.EnumWindows(lambda hWnd,param: param.append(hWnd),hWndList)
-    for hwnd in hWndList:
-        title = win32gui.GetWindowText(hwnd)
-        # print(title)
-        if (title.find('NoMachine') != -1):
-            print('find NoMachine')
-            left,top,right,bottom = win32gui.GetWindowRect(hwnd)
-            # print(title)
-            # print(left, top, right, bottom)
-            win32gui.ShowWindow(hwnd,5)
-            win32gui.SetForegroundWindow(hwnd)
-            return right
-    return -999
-
-
-nx_handle = detect_nx()
+# --------------------------- detect nx ------------------------ #
+nx_location = detect_nx()
 another_monitor = False
-if nx_handle == -999:
+if nx_location == -9999:
     print('not found NoMachine!!!')
-elif nx_handle > 2000:
+elif nx_location > 2000:
     another_monitor = True
     print('nx in another monitor')
+
 
 # --------------------------- load cfg and model ------------------------ #
 config = load_cfg()
@@ -225,10 +135,6 @@ if config['cust']['build_model'] == '0':          # no model inside your directo
     gen_train()
     modify_cfg('build_model', 1)
 char_list, difference, category, img_arr = load_model(difference)
-# --------------------------- load cfg and model ------------------------ #
-
-my_keyboard = pynput.keyboard.Controller()
-my_mouse = pynput.mouse.Controller()
 
 # 1080p monitor size
 x1 = int(config['DEFAULT']['x1'])
@@ -248,19 +154,12 @@ vim_text_bias_width = 8         # There are 8 chars(w*8 pixels) in front of the 
 vertical_num = (y2 - y1) // h
 horizontal_num = (x2 - x1) // w
 
-type_speed = float(config['cust']['type_speed'])
-cmd_speed = float(config['cust']['cmd_speed'])
-
 wait_correct_num = 0  # flag
 log_flag = 0          # flag : log on -> log_flag = 1
 log_cou = 0
 
 file_name = 'calibration.txt'
 export_file_root = 'export/'
-
-exit_flag = 0
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
 
 print('---------------------------')
 print('3')
@@ -271,7 +170,7 @@ print('1')
 time.sleep(1)
 print('Start')
 
-mouse_click()
+mouse_click((x1+x2)//2, (y1+y2)//2)
 open_vim('calibration.txt')
 
 template = cv2.imread('template.png', cv2.IMREAD_GRAYSCALE)
@@ -326,7 +225,7 @@ else:
         quit_vim()
         exit()
 
-mouse_click()
+mouse_click((x1+x2)//2, (y1+y2)//2)
 
 img = screen(x1, y1, x2, y2)
 temp_str, file_eof_, line_cou_ = infer(9, len(char_list) + vim_text_bias_width, img, 0, 1)
