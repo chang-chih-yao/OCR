@@ -1,0 +1,300 @@
+`ifndef I2C_SLAVE_REG_DRIVER__SV
+`define I2C_SLAVE_REG_DRIVER__SV
+
+
+class i2c_slave_reg_driver extends uvm_driver #(i2c_slave_reg_transaction);
+
+
+  virtual i2c_slave_reg_interface.driver i2c_slave_reg_if;
+  virtual i2c_interface.slave i2c_if;
+
+  //i2c_slave_configuration i2c_slave_cfg;
+  bit [9:0] dev_addr;
+
+  bit start_flag = 0;
+  //bit rstart_flag = 0;
+  bit stop_flag = 0;
+  bit detector_start = 0;
+  bit correct_dev = 0;
+  bit clock_stretching = 0;
+
+  int ack_num = 0;
+  int ack_num_compare = 0;
+
+  logic [7:0] data;
+  logic [7:0] recv_dev_addr_1;
+  logic [7:0] recv_dev_addr_0;
+  logic [7:0] recv_addr[];
+  //logic [7:0] recv_data[];
+
+  i2c_slave_reg_model reg_model;
+
+  `uvm_component_utils(i2c_slave_reg_driver)
+
+
+  extern function new(string name = "i2c_slave_reg_driver", uvm_component parent = null);
+  extern virtual function void build_phase(uvm_phase phase);
+  extern virtual task run_phase(uvm_phase phase);
+  extern protected virtual function void reset();
+  extern protected virtual task drive_ACK();
+  extern protected virtual task recv_byte(ref logic [7:0] data);
+  extern protected virtual task receive_dev_addr();
+  extern protected virtual task check_dev_addr();
+  extern protected virtual task receive_addr(ref logic [7:0] recv_addr[]);
+  extern protected virtual task receive_data();
+  extern protected virtual task drive_data();
+
+endclass: i2c_slave_reg_driver
+
+
+/** new function for i2c_slave_reg_driver */
+function i2c_slave_reg_driver::new(string name = "i2c_slave_reg_driver", uvm_component parent = null);
+  super.aew(name, parent);
+endfunction: new
+
+
+/** build phase for i2c_slave_reg_driver */
+function void i2c_slave_reg_driver::build_phase(uvm_phase phase);
+  `uvm_info("I2C_SLAVE_REG_DRIVER", "build_phase is called", UVM_DEBUG)
+  super.build_phase(phase);
+
+  /*if(!uvm_config_db#(virtual i2c_slave_reg_interface.driver)::get(this, "", "i2c_slave_reg_if", i2c_slave_reg_if))
+    `uvm_fatal("NOVIF", {"i2c_slave_reg_if must be set for ", get_full_name()})*/
+  if(!uvm_config_db#(virtual i2c_interface.slave)::get(this, "", "i2c_if", i2c_if))
+    `uvm_fatal("NOVIF", {"i2c_if must be set for ", get_full_name()})
+  if(!uvm_config_db#(bit[9:0])::get(this, "", "dev_addr", dev_addr))
+    `uvm_fatal("NOVIF", {"i2c_if must be set for ", get_full_name()})
+
+  `uvm_info("I2C_SLAVE_REG_DRIVER", "build_phase is end", UVM_DEBUG)
+endfunction: build_phase
+
+
+/** run phase for i2c_slave_reg_driver */
+task i2c_slave_reg_driver::run_phase(uvm_phase phase);
+  i2c_slave_reg_transaction write_tr;
+  i2c_slave_reg_transaction read_tr;
+
+  `uvm_info("I2C_SLAVE_REG_DRIVER", "run_phase is called", UVM_LOW)
+  super.run_phase(phase);
+  reset();
+  `uvm_info("        slave run_phase", $sformatf("dev_addr:%h", dev_addr), UVM_LOW)
+
+  recv_addr = new[4];
+  recv_dev_addr_1 = 0;
+  recv_dev_addr_0 = 0;
+
+  fork
+    /*------------------ main loop ---------------------*/
+    begin
+      forever begin
+        `uvm_info("        slave run_phase", "main loop begin", UVM_LOW)
+        fork
+          begin //: main_loop
+            wait(start_flag);
+            start_flag = 0;                                               // reset flag
+            stop_flag = 0;                                                // reset flag
+            detector_start = 1;
+            `uvm_info("        slave run_phase", "main_loop start", UVM_LOW)
+
+            receive_dev_addr();
+            check_dev_addr();                                             // if dev_addr correct -> correct_dev = 1
+
+            /*correct_dev = 0;
+            @(negedge i2c_if.slave_cb.SCL);
+            i2c_if.slave_cb.s_sda <= 0;*/
+
+            if(correct_dev == 1) begin                                    // dev_addr correct
+              if(recv_dev_addr_1[0] == 1)begin                            // read mode
+                `uvm_info("        slave run_phase", "R mode", UVM_LOW)
+                drive_data();                                             // drive data to master
+              end
+              else begin                                                  // write mode
+                `uvm_info("        slave run_phase", "W mode", UVM_LOW)
+                receive_addr(recv_addr);
+                receive_data();
+              end
+              //wait(stop_flag);
+            end
+          end
+
+          begin // detect rS or P condition -> main loop restart
+            wait(detector_start);
+            detector_start = 0;
+            @(posedge i2c_if.slave_cb.SCL);
+            `uvm_info("        slave run_phase", "detector wait rS or P condition ...", UVM_LOW)
+            wait(start_flag || stop_flag);
+            if(start_flag)
+              `uvm_info("        slave run_phase", "detector detected rS condition", UVM_LOW)
+            else
+              `uvm_info("        slave run_phase", "detector detected P condition", UVM_LOW)
+          end
+
+          begin // timeout -> main loop restart
+            forever begin
+              ack_num_compare = ack_num;
+              #1ms;                                                // clk rate: 100k = 10000ns, ACK rate = 10000*9=90000ns, min: 90000ns + clock stretching time
+              if(ack_num_compare == ack_num) begin
+                `uvm_error("        slave run_phase", "slave or master dead, reset slave...")
+                reset();
+                break;
+              end
+            end
+          end
+
+        join_any
+        disable fork;
+
+      end // end forever
+    end   // end begin
+
+    /*-------------- detect STOP condition and START condition --------------*/
+    begin
+      @(posedge i2c_if.rst);
+      @(negedge i2c_if.rst);
+      forever begin
+        @(i2c_if.slave_cb.SDA);
+        if(i2c_if.slave_cb.SCL == 1 && i2c_if.slave_cb.SDA == 1) begin        // STOP condtion
+          `uvm_info("        slave run_phase", "slave detect STOP condition", UVM_LOW)
+          stop_flag = 1;
+        end
+        else if(i2c_if.slave_cb.SCL == 1 && i2c_if.slave_cb.SDA == 0) begin   // START condtion
+          `uvm_info("        slave run_phase", "slave detect START condition", UVM_LOW)
+          start_flag = 1;
+        end
+      end
+    end // end begin
+
+  join
+  `uvm_info("I2C_SLAVE_REG_DRIVER", "run_phase is end", UVM_LOW)
+endtask: run_phase
+
+
+/** reset for i2c_slave_reg_driver */
+function void i2c_slave_reg_driver::reset();
+  //i2c_slave_reg_if.driver_cb.read_data <= 'b0;
+  i2c_if.slave_cb.s_scl <= 1;
+  i2c_if.slave_cb.s_sda <= 1;
+endfunction: reset
+
+
+task i2c_slave_reg_driver::drive_ACK();
+  if(clock_stretching)begin
+    i2c_if.slave_cb.s_sda <= 0;             // drive ACK
+    repeat (500) @(i2c_if.slave_cb);        // tSU;DAT, min: 250ns
+    i2c_if.slave_cb.s_scl <= 1;             // reset scl
+    clock_stretching = 0;
+  end
+  else begin
+    @(negedge i2c_if.slave_cb.SCL);
+    repeat (600) @(i2c_if.slave_cb);        // tHD;DAT, min: 300ns
+    i2c_if.slave_cb.s_sda <= 0;             // drive ACK
+  end
+
+  @(negedge i2c_if.slave_cb.SCL);
+  repeat (600) @(i2c_if.slave_cb);          // tHD;DAT, min: 300ns
+  i2c_if.slave_cb.s_sda <= 1;               // reset s_sda to 1
+
+  ack_num += 1;
+endtask
+
+
+task i2c_slave_reg_driver::recv_byte(ref logic [7:0] data);
+  for(int i=7; i>=0; i--)begin
+    @(posedge i2c_if.slave_cb.SCL);
+    data[i] = i2c_if.slave_cb.SDA;      // msb
+
+    /*if(i == 0) begin                      // last bit, slave will drive data on next bit!
+      @(negedge i2c_if.slave_cb.SCL);
+      i2c_if.slave_cb.s_scl <= 0;         // slave pull scl to low
+      repeat (20000) @(i2c_if.slave_cb);  // wait 10000ns
+      //i2c_if.slave_cb.s_scl <= 1;         // reset scl
+      clock_stretching = 1;
+    end
+    else begin
+      @(negedge i2c_if.slave_cb.SCL);
+      i2c_if.slave_cb.s_scl <= 0;         // slave pull scl to low
+      repeat (20000) @(i2c_if.slave_cb);  // wait 10000ns
+      i2c_if.slave_cb.s_scl <= 1;         // reset scl
+    end*/
+
+  end
+  drive_ACK();
+
+  /*if(recv_dev_addr_1[0] == 1)begin       // read, slave will drive data on next bit!
+    `uvm_info("        slave run_phase", "R, start stretching", UVM_LOW)
+    i2c_if.slave_cb.s_scl <= 0;           // slave pull scl to low
+    repeat (20000) @(i2c_if.slave_cb);    // wait 10000ns
+    clock_stretching = 1;
+    `uvm_info("        slave run_phase", $sformatf("clock_stretching = %b", clock_stretching), UVM_LOW)
+  end
+  else begin
+    `uvm_info("        slave run_phase", "W, start stretching", UVM_LOW)
+    i2c_if.slave_cb.s_scl <= 0;           // slave pull scl to low
+    repeat (20000) @(i2c_if.slave_cb);    // wait 10000ns
+    i2c_if.slave_cb.s_scl <= 1;           // reset scl
+    `uvm_info("        slave run_phase", $sformatf("clock_stretching = %b", clock_stretching), UVM_LOW)
+  end*/
+
+endtask
+
+
+task i2c_slave_reg_driver::receive_dev_addr();
+  /*----------- recieve first dev_addr -----------*/
+  recv_byte(recv_dev_addr_1);
+  `uvm_info("        slave run_phase", $sformatf("recv_dev_addr : %b %b", recv_dev_addr_1, recv_dev_addr_0), UVM_LOW)
+
+  /*----------- recieve second dev_addr -----------*/
+  if(recv_dev_addr_1[7:3] == 'b11110 && recv_dev_addr_1[0] == 0) begin    // in read mode, slave doesn't need to receive second dev_addr
+    `uvm_info("        slave run_phase", "10 bits addr", UVM_LOW)
+    recv_byte(recv_dev_addr_0);
+    `uvm_info("        slave run_phase", $sformatf("recv_dev_addr : %b %b", recv_dev_addr_1, recv_dev_addr_0), UVM_LOW)
+  end
+endtask
+
+
+task i2c_slave_reg_driver::check_dev_addr();
+  logic [9:0] temp_addr;
+  foreach(temp_addr[i]) temp_addr[i] = 0;
+
+  if(recv_dev_addr_1[7:3] == 'b11110)begin                   // 10 bits dev_addr
+    temp_addr[9] = recv_dev_addr_1[2];
+    temp_addr[8] = recv_dev_addr_1[1];                       // recv_dev_addr_1[0] is R/W bit
+    for(int i=7; i>=0; i--)
+      temp_addr[i] = recv_dev_addr_0[i];
+  end
+  else begin                                                 // 7 bits dev_addr
+    for(int i=6; i>=0; i--)
+      temp_addr[i] = recv_dev_addr_1[i+1];
+  end
+
+  if(temp_addr == dev_addr)begin
+    `uvm_info("        slave run_phase", "correct dev_addr", UVM_LOW)
+    correct_dev = 1;
+  end
+  else begin
+    `uvm_info("        slave run_phase", "incorrect dev_addr", UVM_LOW)
+    correct_dev = 0;
+  end
+endtask
+
+
+task i2c_slave_reg_driver::receive_addr(ref logic [7:0] recv_addr[]);
+  logic [7:0] data;
+  for(int i=recv_addr.size()-1; i>=0; i--)begin  // MSB
+    recv_byte(data);
+    recv_addr[i] = data;
+  end
+  `uvm_info("        slave run_phase", $sformatf("recv_addr : %h %h %h %h", recv_addr[3], recv_addr[2], recv_addr[1], recv_addr[0]), UVM_LOW)
+endtask
+
+
+task i2c_slave_reg_driver::receive_data();
+  logic [7:0] data;
+  logic [31:0] temp;
+  temp = {<<byte{recv_addr}};
+
+  forever begin
+    recv_byte(data);
+    reg_model.save_reg(temp, data);           // write data to register
+    temp += 1;
+  end
