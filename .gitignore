@@ -10,11 +10,13 @@ __pycache__/
 
 # img data
 color_test/
-dataset_fast/
-training_data_fast/
+OCR/dataset_fast/
+OCR/training_data_fast/
 
 # export data
-export/
+OCR/export/*
+!OCR/export/README.md
 
 # log
-log/
+OCR/log/*
+!OCR/log/README.md
