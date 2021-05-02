@@ -20,7 +20,7 @@ Total : 95
 
 ***
 
-## constraint
+## Constraint
 
 * Monitor resolution : 1080p
 
@@ -33,8 +33,8 @@ Total : 95
 Cursor color (Background color) : #000000  
 ![Background color](OCR/misc/2.PNG)
 
-* Close windows notification  
-![close windows notification](OCR/misc/3.PNG)
+<!-- * Close windows notification  
+![close windows notification](OCR/misc/3.PNG) -->
 
 ***
 
