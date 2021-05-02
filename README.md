@@ -40,6 +40,19 @@ Cursor color (Background color) : #000000
 
 ## Quick Start
 
+1. Navigate to OCR/OCR/
+
+2. Run calibration :
+    ```text
+    python calibration.py
+    ```
+    If you see **success** at the bottom of the terminal, it means the calibration is successful.
+
+3. Now you can run inference_fast :
+    ```text
+    python inference_fast.py
+    ```
+
 ***
 
 ## Develop notes
