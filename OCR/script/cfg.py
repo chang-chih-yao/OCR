@@ -1,4 +1,5 @@
 import configparser
+import os
 
 def build_cfg():
     config = configparser.ConfigParser()
@@ -34,6 +35,12 @@ def modify_cfg(key, value):
     config['cust'][key] = str(value)
     with open('cfg/cfg.ini', 'w') as configfile:
         config.write(configfile)
+
+if os.path.isfile('cfg/cfg.ini'):
+    pass
+else:
+    build_cfg()
+    print('create new cfg.ini in cfg/')
 
 if __name__ == '__main__':
     build_cfg()

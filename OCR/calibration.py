@@ -13,7 +13,7 @@ from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
 from script.windows_api import detect_nx
-
+from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 def screen(x1, y1, x2, y2, threshold=1):
     print(x1, y1, x2, y2)
@@ -119,8 +119,7 @@ another_monitor, is_nx_active = detect_nx()
 if is_nx_active == False:
     exit()
 
-# --------------------------- create and load cfg  ------------------------ #
-build_cfg()
+# --------------------------- load cfg  ------------------------ #
 config = load_cfg()
 # for key in config['cust']:
 #     print(key, config['cust'][key])
@@ -134,7 +133,6 @@ if config['cust']['build_model'] == '0':          # no model inside your directo
     modify_cfg('build_model', 1)
 char_list, difference, category, img_arr = load_model(difference)
 
-from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 # 1080p monitor size
 x1 = int(config['DEFAULT']['x1'])
