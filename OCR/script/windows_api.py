@@ -102,6 +102,16 @@ def background_screenshot(hwnd, width, height):
 def active_window_title():
     return str(win32gui.GetWindowText(win32gui.GetForegroundWindow()))
 
+def message_box(hwnd, num):
+    choice = win32api.MessageBox(hwnd, 'detect {:d} files in this directory, continue !!!???'.format(num), 'Warning !!', win32con.MB_YESNO)
+    print(choice)
+    if choice == 6:
+        print('user select yes')
+    elif choice == 7:
+        print('user select no')
+    else:
+        print('error')
+
 '''
 def send_input_text(hwnd, my_str=''):
     win_clip(my_str)
@@ -123,6 +133,7 @@ if __name__ == '__main__':
     
     #time.sleep(1)
     hwnd = get_windows_handle('Notepad', active_window=False)
+    message_box(hwnd, 15)
     start_time = time.time()
     img1 = background_screenshot(hwnd, 200, 300)
     print(time.time()-start_time)
