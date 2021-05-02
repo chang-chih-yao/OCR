@@ -37,3 +37,7 @@ def gen_data(img, difference=2, img_from_png=False, threshold_step=5, char_len=9
 
     # cv2.destroyAllWindows()
     print('gen dataset finish')
+
+if __name__ == '__main__':
+    temp_img = cv2.imread('../gen_dataset.png', cv2.IMREAD_GRAYSCALE)
+    gen_data(temp_img, difference=2, img_from_png=True)

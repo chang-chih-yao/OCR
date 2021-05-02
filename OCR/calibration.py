@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-import configparser
 import numpy as np
 import os
 import cv2
@@ -9,11 +8,12 @@ from filecmp import cmp
 from PIL import ImageGrab
 
 from script.gen_dataset_fast import gen_data
+from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
-from script.cfg import load_cfg, build_cfg, modify_cfg
+from script.cfg import build_cfg, load_cfg, modify_cfg
 from script.windows_api import detect_nx
-from script.keyboard_mouse_ctrl import on_press, my_type, mouse_click, open_vim, quit_vim
+
 
 def screen(x1, y1, x2, y2, threshold=1):
     print(x1, y1, x2, y2)
@@ -115,26 +115,26 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
 
 
 # --------------------------- detect nx ------------------------ #
-nx_location = detect_nx()
-another_monitor = False
-if nx_location == -9999:
-    print('not found NoMachine!!!')
-elif nx_location > 2000:
-    another_monitor = True
-    print('nx in another monitor')
+another_monitor, is_nx_active = detect_nx()
+if is_nx_active == False:
+    exit()
 
-
-# --------------------------- load cfg and model ------------------------ #
+# --------------------------- create and load cfg  ------------------------ #
+build_cfg()
 config = load_cfg()
 # for key in config['cust']:
 #     print(key, config['cust'][key])
 difference = int(config['cust']['difference'])
+
+# --------------------------- create and load model ------------------------ #
 if config['cust']['build_model'] == '0':          # no model inside your directory
     temp_img = cv2.imread('gen_dataset.png', cv2.IMREAD_GRAYSCALE)
     gen_data(temp_img, difference=2, img_from_png=True)
     gen_train()
     modify_cfg('build_model', 1)
 char_list, difference, category, img_arr = load_model(difference)
+
+from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 # 1080p monitor size
 x1 = int(config['DEFAULT']['x1'])

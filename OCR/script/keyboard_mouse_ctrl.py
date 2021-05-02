@@ -18,7 +18,7 @@ def on_press(key):
 
 def my_type(my_str = ''):
     '''
-    my_str: string
+    my_str : string
     '''
     no_shift_char = "abcdefghijklmnopqrstuvwxyz0123456789`-=[]\\;',./"      # 47 chars
     shift_char    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'       # 47 chars

@@ -34,3 +34,6 @@ def modify_cfg(key, value):
     config['cust'][key] = str(value)
     with open('cfg/cfg.ini', 'w') as configfile:
         config.write(configfile)
+
+if __name__ == '__main__':
+    build_cfg()

@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-import configparser
 import numpy as np
 import os
 import cv2
@@ -8,9 +7,9 @@ import sys
 from PIL import ImageGrab
 
 from script.load_model import load_model
-from script.cfg import load_cfg, build_cfg, modify_cfg
+from script.cfg import load_cfg
 from script.windows_api import detect_nx
-from script.keyboard_mouse_ctrl import on_press, my_type, mouse_click, open_vim, quit_vim
+from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 # ------------------------- def ---------------------------- #
 def recursive_vim():
@@ -161,13 +160,9 @@ def single_file_mode(name):
 
 
 # --------------------------- detect nx ------------------------ #
-nx_location = detect_nx()
-another_monitor = False
-if nx_location == -9999:
-    print('not found NoMachine!!!')
-elif nx_location > 2000:
-    another_monitor = True
-    print('nx in another monitor')
+another_monitor, is_nx_active = detect_nx()
+if is_nx_active == False:
+    exit()
 
 
 # --------------------------- load cfg and model ------------------------ #
@@ -175,9 +170,13 @@ config = load_cfg()
 # for key in config['cust']:
 #     print(key, config['cust'][key])
 difference = int(config['cust']['difference'])
+if config['cust']['build_model'] == '0':          # no model inside your directory
+    print('please run calibration.py first')
+    exit()
 char_list, difference, category, img_arr = load_model(difference)
 
 
+# --------------------------- init variables ------------------------ #
 x1 = int(config['cust']['x1'])
 y1 = int(config['cust']['y1'])
 x2 = int(config['cust']['x2'])
@@ -197,7 +196,7 @@ wait_correct_num = False  # flag
 export_file_root = 'export/'
 
 
-# -------------------- START -------------------- #
+# --------------------------- START --------------------------- #
 print('---------------------------')
 while True:
     print('please input mode : 1.single file mode  2.recursive mode  3.terminal export')
