@@ -20,3 +20,7 @@ OCR/export/*
 # log
 OCR/log/*
 !OCR/log/README.md
+
+#cfg
+OCR/cfg/*
+!OCR/cfg/README.md
