@@ -4,26 +4,93 @@ import numpy as np
 import os
 import cv2
 import sys
-from filecmp import cmp
+from filecmp import cmp, dircmp
 from PIL import ImageGrab
+import matplotlib.pyplot as plt
 
 from script.gen_dataset_fast import gen_data
 from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
-from script.windows_api import detect_nx
+from script.windows_api import detect_nx, message_box
 from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
+def same_dirs(a, b):
+    """Check that structure and files are the same for directories a and b
+
+    Args:
+        a (str): The path to the first directory
+        b (str): The path to the second directory
+    """
+    comp = dircmp(a, b)
+    common = sorted(comp.common)
+    left = sorted(comp.left_list)
+    right = sorted(comp.right_list)
+    if left != common or right != common:
+        return False
+    if len(comp.diff_files):
+        return False
+    for subdir in comp.common_dirs:
+        left_subdir = os.path.join(a, subdir)
+        right_subdir = os.path.join(b, subdir)
+        return same_dirs(left_subdir, right_subdir)
+    return True 
+
+def recursive_vim():
+    my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
+    my_type('enter_key')
+    while True:
+        img = screen(x1, y1, x2, y2 + 2*h)
+        terminal_str, file_eof_, line_cou_ = infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
+        # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
+        # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
+        # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
+        # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
+        if terminal_str.split('\n')[-2] == '':
+            print('wait aaa.tmp...')
+            time.sleep(1)
+        else:
+            break
+    if terminal_str.split('\n')[-3].find('Permission denied') >= 0:
+        print('Permission denied !!!')
+        print('please cp -r this_dir/ to your dir')
+        exit()
+    
+    open_vim('~/aaa.tmp', recursive_mode=True)
+    my_type(':%s/\\.\\///g')
+    my_type('enter_key')
+    my_type(':g/aaa.tmp/d')
+    my_type('enter_key')
+    my_type(':g/\\/\\./d')
+    my_type('enter_key')
+    my_type(':1')
+    my_type('enter_key')
+
+def single_file_mode(name):
+    file_name = name
+    f = open(export_dir_name + file_name, 'w')
+    open_vim(file_name)
+
+    file_eof = 0
+    line_cou = 1
+    while(file_eof == 0):
+        img = screen(x1, y1, x2, y2)
+        temp_str, file_eof, line_cou = infer(vertical_num, horizontal_num, img, file_eof, line_cou)
+        f.write(temp_str)
+        my_type('pagedown_key')
+
+    quit_vim()
+    f.close()
+
 def screen(x1, y1, x2, y2, threshold=1):
-    print(x1, y1, x2, y2)
     img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
     img_np = np.array(img)
     frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
     ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
     return th1
 
-def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
+def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True, draw_plot=False):
     global log_cou, wait_correct_num
     temp_s = ''
     x_start = w*0
@@ -31,6 +98,18 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
 
     y = y_start
     space_cou = 0
+
+    if draw_plot:
+        char_np_arr = np.array(list(char_list))
+        temp_y_arr = np.random.randint(100, size=(95))
+        plt.ion()
+        fig = plt.figure()
+        fig.set_size_inches(14, 8)
+        ax = fig.add_subplot()
+        line1, = ax.plot(char_np_arr, temp_y_arr)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+
     for i in range(vertical_num):
         x = x_start
         front_str = ''
@@ -52,6 +131,12 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
                 result_arr = np.absolute(img_arr - mid)
                 result_sum = np.sum(result_arr, axis=1)                                      # (difference*category,)   int32
                 result = np.argmin(result_sum) // difference
+                if draw_plot:
+                    line1.set_ydata(result_sum[::2])
+                    fig.canvas.draw()
+                    time.sleep(0.5)
+                    fig.canvas.flush_events()
+
                 #print(result, char_list[result])
             if j < vim_text_bias_width and vim_mode:
                 front_str += char_list[result]
@@ -115,7 +200,7 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True):
 
 
 # --------------------------- detect nx ------------------------ #
-another_monitor, is_nx_active = detect_nx()
+hwnd, is_nx_active, another_monitor = detect_nx()
 if is_nx_active == False:
     exit()
 
@@ -196,7 +281,7 @@ print('y1 : ' + str(y1))
 
 
 img = screen(x1, y1, x2, y2)
-temp_str, file_eof_, line_cou_ = infer(1, len(char_list) + vim_text_bias_width, img, 0, 1)
+temp_str, file_eof_, line_cou_ = infer(1, len(char_list) + vim_text_bias_width, img, 0, 1, draw_plot=False)
 print('detect :|' + temp_str + '|')
 if temp_str == 'abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?':
     print('char list correct')
@@ -243,6 +328,8 @@ quit_vim()
 
 
 #------------------------- check and compare export file ---------------------------#
+vertical_num = (y2 - y1) // h
+horizontal_num = (x2 - x1) // w
 now = datetime.now()
 export_dir_name = export_file_root + now.strftime("%Y%m%d_%H_%M_%S") + '/'
 os.mkdir(export_dir_name)
@@ -270,4 +357,59 @@ if cmp('compare_file/calibration.txt', export_dir_name + file_name):
 else:
     print('----------------')
     print('fail !!!!!!!')
+    exit()
+
+if message_box(hwnd, 'recursive test?') == 1:
+    recursive_vim()
+    dir_str = ''
+    file_eof = 0
+    line_cou = 1
+    while(file_eof == 0):
+        img = screen(x1, y1, x2, y2)
+        temp_str, file_eof, line_cou = infer(vertical_num, horizontal_num, img, file_eof, line_cou)
+        dir_str += temp_str
+        my_type('pagedown_key')
+    # print(dir_str)
+    quit_vim()
+    my_type('rm -f ~/aaa.tmp')
+    my_type('enter_key')
+
+    dir_arr = dir_str.split('\n')
+    if len(dir_arr) > 50:
+        print('detect {:d} files in this directory, continue !!!???(y/n) '.format(len(dir_arr)), end='')
+        y_or_n = input()
+        if y_or_n != 'y' and y_or_n != 'Y':
+            print('end program')
+            exit()
+
+    print(dir_arr)
+    mouse_click((x1+x2)//2, (y1+y2)//2)
+
+    for item in dir_arr:
+        my_type('wc -l < ' + item)
+        my_type('enter_key')
+        img = screen(x1, y1, x2, y2 + 2*h)
+        terminal_str, file_eof_, line_cou_ = infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
+        # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
+        # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
+        # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
+        # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
+        if (terminal_str.split('\n')[-3] == '0'):
+            if (terminal_str.split('\n')[-4].find('Is a directory') >= 0):
+                os.mkdir(export_dir_name + item + '/')
+                print('build dir')
+            else:
+                f = open(export_dir_name + item, 'w')
+                f.close()
+                print('it is empty file')
+        else:
+            print(int(terminal_str.split('\n')[-3]))
+            single_file_mode(item)
+    
+    print('recursive DONE')
+    if same_dirs('compare_file/', export_dir_name):
+        print('recursive test success')
+    else:
+        print('recursive test error!!')
+
 
