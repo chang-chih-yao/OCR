@@ -52,17 +52,17 @@ def detect_nx(targetTitle='NoMachine'):
     hwnd = get_windows_handle(targetTitle, active_window=True)
     if hwnd == 0:
         print('not found NoMachine!!!')
-        return is_nx_active, another_monitor
+        return hwnd, is_nx_active, another_monitor
     elif get_windows_location(hwnd) > 2000:
         another_monitor = True
         is_nx_active = True
         print('nx in second monitor')
-        return is_nx_active, another_monitor
+        return hwnd, is_nx_active, another_monitor
     else:
         another_monitor = False
         is_nx_active = True
         print('nx in first monitor')
-        return is_nx_active, another_monitor
+        return hwnd, is_nx_active, another_monitor
 
 def win_clip(my_str=''):
     '''
@@ -102,15 +102,18 @@ def background_screenshot(hwnd, width, height):
 def active_window_title():
     return str(win32gui.GetWindowText(win32gui.GetForegroundWindow()))
 
-def message_box(hwnd, num):
-    choice = win32api.MessageBox(hwnd, 'detect {:d} files in this directory, continue !!!???'.format(num), 'Warning !!', win32con.MB_YESNO)
-    print(choice)
+def message_box(hwnd, my_str):
+    choice = win32api.MessageBox(hwnd, my_str, 'Warning !!', win32con.MB_YESNO)
+    #print(choice)
     if choice == 6:
         print('user select yes')
+        return 1
     elif choice == 7:
         print('user select no')
+        return 0
     else:
-        print('error')
+        print('message_box select error')
+        return -1
 
 '''
 def send_input_text(hwnd, my_str=''):
@@ -122,9 +125,17 @@ def send_input_text(hwnd, my_str=''):
     # print(d)
     #win32gui.SendMessage(hwnd, win32con.WM_PASTE, 0, 0)
     temp = win32gui.SendMessage(hwnd, win32con.WM_CHAR, ord('x'), 0)
-    print(temp)
+    #print(temp)
     print('done')
     # win32clipboard.CloseClipboard()
+
+def winfun(hwnd, lparam):
+    s = win32gui.GetWindowText(hwnd)
+    
+    if len(s) > 3:
+        send_input_text(hwnd, 'test\nfsdff\n')
+        print("winfun, child_hwnd: %d   txt: %s" % (hwnd, s))
+    return 1
 '''
 
 if __name__ == '__main__':
@@ -132,30 +143,34 @@ if __name__ == '__main__':
     # win_clip('test\nhahahah\n\n\nzzz  \n')
     
     #time.sleep(1)
-    hwnd = get_windows_handle('Notepad', active_window=False)
-    message_box(hwnd, 15)
-    start_time = time.time()
-    img1 = background_screenshot(hwnd, 200, 300)
-    print(time.time()-start_time)
-    img2 = screen(0, 0, 200, 300)
-    print(time.time()-start_time)
+    hwnd = get_windows_handle('Notepad', active_window=True)
+    #win32gui.EnumChildWindows(hwnd, winfun, None)
+
+    #send_input_text(197734, 'test\nfsdff\n')
+    # message_box(hwnd, 'test str')
+    # start_time = time.time()
+    # img1 = background_screenshot(hwnd, 200, 300)
+    # print(time.time()-start_time)
+    # img2 = screen(0, 0, 200, 300)
+    # print(time.time()-start_time)
     # cv2.imshow("img1", img1)
     # cv2.imshow("img2", img2)
     # cv2.waitKey()
-    print(img1.shape)
-    print(img1.dtype)
-    print(img2.shape)
-    print(img2.dtype)
-    diff = img1 - img2
-    print(diff)
-    if np.all((diff.flatten() == 0)):
-        print('same')
+    # print(img1.shape)
+    # print(img1.dtype)
+    # print(img2.shape)
+    # print(img2.dtype)
+    # diff = img1 - img2
+    # print(diff)
+    # if np.all((diff.flatten() == 0)):
+    #     print('same')
     
     #print(win32gui.GetWindowPlacement(hwnd))
 
+    
 
     # while True:
-    #     if active_window_title().find('Notepad') != -1:
+    #     if active_window_title().find('NoMachine') != -1:
     #         print('active')
     #     else:
     #         print('non_active')

@@ -160,7 +160,7 @@ def single_file_mode(name):
 
 
 # --------------------------- detect nx ------------------------ #
-another_monitor, is_nx_active = detect_nx()
+hwnd, is_nx_active, another_monitor = detect_nx()
 if is_nx_active == False:
     exit()
 
