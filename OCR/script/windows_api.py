@@ -15,7 +15,7 @@ def screen(x1, y1, x2, y2, threshold=1):
     frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
     return frame
 
-def get_windows_handle(targetTitle, active_window=True):
+def get_windows_handle(targetTitle):
     hWndList = []
     win32gui.EnumWindows(lambda hWnd, param: param.append(hWnd),hWndList)
     for hwnd in hWndList:
@@ -24,23 +24,23 @@ def get_windows_handle(targetTitle, active_window=True):
         #print(title)
         if (title.find(targetTitle) != -1):
             print(title)
-            if active_window:
-                win32gui.ShowWindow(hwnd, 3)
-                win32gui.SetForegroundWindow(hwnd)
-                rect = win32gui.GetWindowRect(hwnd)
-                print(rect)
+            rect = win32gui.GetWindowRect(hwnd)
+            print(rect)
             return hwnd
             '''
             if (title.find('screen') != -1):
                 print('OK')
                 print(title)
                 # win32gui.SetWindowPos(hwnd,win32con.HWND_NOTOPMOST,10,10,1920, 1080, win32con.SWP_SHOWWINDOW)
-                win32gui.ShowWindow(hwnd, 3)
-                win32gui.SetForegroundWindow(hwnd)
                 rect = win32gui.GetWindowRect(hwnd)
                 print(rect)
+                return hwnd
             '''
     return 0
+
+def active_window(hwnd):
+    win32gui.ShowWindow(hwnd, 3)
+    win32gui.SetForegroundWindow(hwnd)
 
 def get_windows_location(hwnd):
     rect = win32gui.GetWindowRect(hwnd)
@@ -49,7 +49,8 @@ def get_windows_location(hwnd):
 def detect_nx(targetTitle='NoMachine'):
     another_monitor = False
     is_nx_active = False
-    hwnd = get_windows_handle(targetTitle, active_window=True)
+    hwnd = get_windows_handle(targetTitle)
+    active_window(hwnd)
     if hwnd == 0:
         print('not found NoMachine!!!')
         return hwnd, is_nx_active, another_monitor
