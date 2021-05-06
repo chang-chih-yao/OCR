@@ -162,6 +162,7 @@ def single_file_mode(name):
 # --------------------------- detect nx ------------------------ #
 hwnd, is_nx_active, another_monitor = detect_nx()
 if is_nx_active == False:
+    print('not found NoMachine')
     exit()
 
 
@@ -242,9 +243,7 @@ elif choice == '2':
 
     dir_arr = dir_str.split('\n')
     if len(dir_arr) > 50:
-        print('detect {:d} files in this directory, continue !!!???(y/n) '.format(len(dir_arr)), end='')
-        y_or_n = input()
-        if y_or_n != 'y' and y_or_n != 'Y':
+        if message_box(hwnd, 'Detect {:d} files in this directory, continue ?'.format(len(dir_arr))) == 0:
             print('end program')
             exit()
 

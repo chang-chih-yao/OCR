@@ -15,6 +15,7 @@ from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
 from script.windows_api import detect_nx, message_box
 from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
+from script.inference_core import Inference
 
 def same_dirs(a, b):
     """Check that structure and files are the same for directories a and b
@@ -41,8 +42,8 @@ def recursive_vim():
     my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
     my_type('enter_key')
     while True:
-        img = screen(x1, y1, x2, y2 + 2*h)
-        terminal_str, file_eof_, line_cou_ = infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
+        img = my_infer.screen(x1, y1, x2, y2 + 2*h)
+        terminal_str, file_eof_, line_cou_ = my_infer.infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
         # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
         # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
         # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
@@ -75,14 +76,14 @@ def single_file_mode(name):
     file_eof = 0
     line_cou = 1
     while(file_eof == 0):
-        img = screen(x1, y1, x2, y2)
-        temp_str, file_eof, line_cou = infer(vertical_num, horizontal_num, img, file_eof, line_cou)
+        img = my_infer.screen(x1, y1, x2, y2)
+        temp_str, file_eof, line_cou = my_infer.infer(vertical_num, horizontal_num, img, file_eof, line_cou)
         f.write(temp_str)
         my_type('pagedown_key')
 
     quit_vim()
     f.close()
-
+'''
 def screen(x1, y1, x2, y2, threshold=1):
     img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
     img_np = np.array(img)
@@ -197,11 +198,12 @@ def infer(vertical_num, horizontal_num, th1, file_eof, line_cou, vim_mode=True, 
         sys.stdout.flush()
     print('\n', end='')
     return temp_s, file_eof, line_cou
-
+'''
 
 # --------------------------- detect nx ------------------------ #
 hwnd, is_nx_active, another_monitor = detect_nx()
 if is_nx_active == False:
+    print('not found NoMachine')
     exit()
 
 # --------------------------- load cfg  ------------------------ #
@@ -217,7 +219,6 @@ if config['cust']['build_model'] == '0':          # no model inside your directo
     gen_train()
     modify_cfg('build_model', 1)
 char_list, difference, category, img_arr = load_model(difference)
-
 
 # 1080p monitor size
 x1 = int(config['DEFAULT']['x1'])
@@ -244,6 +245,8 @@ log_cou = 0
 file_name = 'calibration.txt'
 export_file_root = 'export/'
 
+my_infer = Inference(char_list, difference, img_arr, w, h, vim_text_bias_width, log_flag)
+
 print('---------------------------')
 print('3')
 time.sleep(1)
@@ -257,7 +260,7 @@ mouse_click((x1+x2)//2, (y1+y2)//2)
 open_vim('calibration.txt')
 
 template = cv2.imread('template.png', cv2.IMREAD_GRAYSCALE)
-img_gray = screen(x1, y1, x2, y2)
+img_gray = my_infer.screen(x1, y1, x2, y2)
 print(img_gray.shape)
 res = cv2.matchTemplate(img_gray, template, cv2.TM_SQDIFF_NORMED)
 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -280,8 +283,8 @@ print('y1 : ' + str(y1))
 
 
 
-img = screen(x1, y1, x2, y2)
-temp_str, file_eof_, line_cou_ = infer(1, len(char_list) + vim_text_bias_width, img, 0, 1, draw_plot=False)
+img = my_infer.screen(x1, y1, x2, y2)
+temp_str, file_eof_, line_cou_ = my_infer.infer(1, len(char_list) + vim_text_bias_width, img, 0, 1, draw_plot=False)
 print('detect :|' + temp_str + '|')
 if temp_str == 'abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?':
     print('char list correct')
@@ -298,8 +301,8 @@ else:
     char_list, difference, category, img_arr = load_model(difference=2)
     modify_cfg('difference', difference)
 
-    img = screen(x1, y1, x2, y2)
-    temp_str, file_eof_, line_cou_ = infer(1, len(char_list) + vim_text_bias_width, img, 0, 1)
+    img = my_infer.screen(x1, y1, x2, y2)
+    temp_str, file_eof_, line_cou_ = my_infer.infer(1, len(char_list) + vim_text_bias_width, img, 0, 1)
     print(temp_str)
     if temp_str == 'abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?':
         print('char list correct')
@@ -310,17 +313,17 @@ else:
 
 mouse_click((x1+x2)//2, (y1+y2)//2)
 
-img = screen(x1, y1, x2, y2)
-temp_str, file_eof_, line_cou_ = infer(9, len(char_list) + vim_text_bias_width, img, 0, 1)
+img = my_infer.screen(x1, y1, x2, y2)
+temp_str, file_eof_, line_cou_ = my_infer.infer(9, len(char_list) + vim_text_bias_width, img, 0, 1)
 a_len = len(temp_str.split('\n')[-1])                       # the number of 'a': len(char_list) + extra 'a's below(int(a_len) - len(char_list))
 x2 = x1 + (219 - (int(a_len) - len(char_list))) * w         # line 8 in calibration.txt, there are 211 'a's
 print('x2 : ' + str(x2))
 
 
-img = screen(x1, y1, x2, y2)
+img = my_infer.screen(x1, y1, x2, y2)
 file_eof = 0
 line_cou = 1
-temp_str, file_eof, line_cou = infer(y2//h, (x2-x1)//w, img, file_eof, line_cou)
+temp_str, file_eof, line_cou = my_infer.infer(y2//h, (x2-x1)//w, img, file_eof, line_cou)
 # print(temp_str)
 y2 = y1 + (line_cou - 1) * h
 print('\ny2 : ' + str(y2))
@@ -339,8 +342,8 @@ open_vim(file_name)
 file_eof = 0
 line_cou = 1
 while(file_eof == 0):
-    img = screen(x1, y1, x2, y2)
-    temp_str, file_eof, line_cou = infer((y2-y1)//h, (x2-x1)//w, img, file_eof, line_cou)
+    img = my_infer.screen(x1, y1, x2, y2)
+    temp_str, file_eof, line_cou = my_infer.infer((y2-y1)//h, (x2-x1)//w, img, file_eof, line_cou)
     f.write(temp_str)
     my_type('pagedown_key')
 f.close()
@@ -360,13 +363,17 @@ else:
     exit()
 
 if message_box(hwnd, 'recursive test?') == 1:
+    if os.path.isdir('compare_file/test2/'):
+        pass
+    else:
+        os.mkdir('compare_file/test2/')
     recursive_vim()
     dir_str = ''
     file_eof = 0
     line_cou = 1
     while(file_eof == 0):
-        img = screen(x1, y1, x2, y2)
-        temp_str, file_eof, line_cou = infer(vertical_num, horizontal_num, img, file_eof, line_cou)
+        img = my_infer.screen(x1, y1, x2, y2)
+        temp_str, file_eof, line_cou = my_infer.infer(vertical_num, horizontal_num, img, file_eof, line_cou)
         dir_str += temp_str
         my_type('pagedown_key')
     # print(dir_str)
@@ -388,8 +395,8 @@ if message_box(hwnd, 'recursive test?') == 1:
     for item in dir_arr:
         my_type('wc -l < ' + item)
         my_type('enter_key')
-        img = screen(x1, y1, x2, y2 + 2*h)
-        terminal_str, file_eof_, line_cou_ = infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
+        img = my_infer.screen(x1, y1, x2, y2 + 2*h)
+        terminal_str, file_eof_, line_cou_ = my_infer.infer(vertical_num + 2, horizontal_num, img, 0, 1, vim_mode=False)
         # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
         # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
         # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
