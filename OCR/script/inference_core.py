@@ -67,21 +67,9 @@ class Inference:
         self.vertical_num = (self.y2 - self.y1) // self.h
         self.horizontal_num = (self.x2 - self.x1) // self.w
 
-        self.wait_correct_num = 0  # flag
-        self.log_flag = 0          # flag : log on -> log_flag = 1
+        self.wait_correct_num = 0            # flag
+        self.log_flag = 0                    # flag : log on -> log_flag = 1
         self.log_cou = 0
-
-    # def set_x1(self, data):
-    #     self.x1 = data
-    
-    # def set_y1(self, data):
-    #     self.y1 = data
-
-    # def set_x2(self, data):
-    #     self.x2= data
-
-    # def set_y2(self, data):
-    #     self.y2 = data
 
     def vertical_and_horizontal_num_update(self):
         self.vertical_num = (self.y2 - self.y1) // self.h

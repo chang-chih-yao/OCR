@@ -72,13 +72,11 @@ print('y1 : ' + str(my_infer.y1))
 
 
 img = my_infer.screen()
-temp_str = my_infer.infer(img, vertical_num= 1, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]
+temp_str = my_infer.infer(img, vertical_num=1, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]
 print('detect :|' + temp_str + '|')
 if temp_str == my_infer.char_list:
     print('char list correct')
 else:
-    my_type(':8')
-    my_type('enter_key')
     print('need to build new model')
     # cv2.imshow("img", img)
     # cv2.waitKey()
