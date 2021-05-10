@@ -104,7 +104,7 @@ def active_window_title():
     return str(win32gui.GetWindowText(win32gui.GetForegroundWindow()))
 
 def message_box(hwnd, my_str):
-    choice = win32api.MessageBox(hwnd, my_str, 'Warning !!', win32con.MB_YESNO)
+    choice = win32api.MessageBox(hwnd, my_str, 'Notation !', win32con.MB_YESNO)
     #print(choice)
     if choice == 6:
         print('user select yes')
