@@ -75,25 +75,43 @@ class Inference:
         self.vertical_num = (self.y2 - self.y1) // self.h
         self.horizontal_num = (self.x2 - self.x1) // self.w
 
+    def delete_return_line(self, my_str, cmd):
+        split_str = my_str.split('\n')
+        target_line_return = 0
+        for i in range(len(split_str)-1, 0, -1):
+            if split_str[i] != '':
+                target_line_return = i
+                break
+        result = ''
+        for i in range(target_line_return+1):    # 0 ~ target_line_return
+            result += split_str[i]
+            result += '\n'
+        
+        target_line_cmd = 0
+        for i in range(len(split_str)-1, 0, -1):
+            if split_str[i].find(cmd) >=0:
+                target_line_cmd = i
+                break
+        return result, target_line_cmd
+        
     def recursive_vim(self):
         my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
         my_type('enter_key')
         while True:
             img = self.screen(vim_mode=0)
-            terminal_str = self.infer(img, vertical_num=self.vertical_num+2, vim_mode=False)[0]
-            # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
-            # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
+            terminal_str = self.infer(img, vim_mode=False)[0]
+            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, "find . | grep '[.][/][^.]' > ~/aaa.tmp")
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
             # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
-            if terminal_str.split('\n')[-2] == '':
+            if terminal_str.split('\n')[target_line_cmd+1] == '':
                 print('wait aaa.tmp...')
                 time.sleep(1)
             else:
                 break
-        if terminal_str.split('\n')[-3].find('Permission denied') >= 0:
-            print('Permission denied !!!')
-            print('please cp -r this_dir/ to your dir')
-            exit()
+        # if terminal_str.split('\n')[-3].find('Permission denied') >= 0:
+        #     print('Permission denied !!!')
+        #     print('please cp -r this_dir/ to your dir')
+        #     exit()
         
         open_vim('~/aaa.tmp', recursive_mode=True)
         my_type(':%s/\\.\\///g')
@@ -124,9 +142,8 @@ class Inference:
             my_type('wc -l < ' + item)
             my_type('enter_key')
             img = self.screen(vim_mode=0)
-            terminal_str = self.infer(img, vertical_num=self.vertical_num+2, vim_mode=False)[0]
-            # print('[-5]|' + terminal_str.split('\n')[-5] + '|')
-            # print('[-4]|' + terminal_str.split('\n')[-4] + '|')
+            terminal_str = self.infer(img, vim_mode=False)[0]
+            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, 'wc -l <')
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
             # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
             if (terminal_str.split('\n')[-3] == '0'):
@@ -151,7 +168,7 @@ class Inference:
         my_str = ''
         while(file_eof == 0):
             img = self.screen()
-            temp_str, file_eof, line_cou = self.infer(img, vertical_num=self.vertical_num, horizontal_num=self.horizontal_num, file_eof=file_eof, line_cou=line_cou)
+            temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
             my_str += temp_str
             my_type('pagedown_key')
 
@@ -177,6 +194,8 @@ class Inference:
         #global log_cou, wait_correct_num
         if vertical_num is None:
             vertical_num = self.vertical_num
+            if vim_mode==False:
+                vertical_num += 2
         if horizontal_num is None:
             horizontal_num = self.horizontal_num
         temp_s = ''

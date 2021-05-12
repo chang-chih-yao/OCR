@@ -4,13 +4,9 @@ import numpy as np
 import os
 import sys
 
-from script.keyboard_mouse_ctrl import mouse_click
-from script.windows_api import message_box
-from script.inference_core import Inference
-
 print('---------------------------')
 while True:
-    print('please input mode : 1.single file mode  2.recursive mode  3.terminal export')
+    print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.now file')
     choice = input()
     if choice != '1' and choice != '2' and choice != '3':
         print('please input 1 or 2 or 3')
@@ -20,6 +16,10 @@ while True:
         break
     else:
         break
+
+from script.keyboard_mouse_ctrl import mouse_click
+from script.windows_api import message_box
+from script.inference_core import Inference
 
 my_infer = Inference(calibration=False)
 export_file_root = 'export/'
@@ -41,7 +41,7 @@ elif choice == '2':
     my_infer.recursive_mode(export_dir_name)
 elif choice == '3':
     img = my_infer.screen(vim_mode=0)
-    terminal_str = my_infer.infer(img, vertical_num=my_infer.vertical_num+2, vim_mode=False)[0]
+    terminal_str = my_infer.infer(img, vim_mode=False)[0]
     print('-------------------- output -------------------------')
     print(terminal_str)
     # f = open(export_dir_name + 'terminal.txt', 'w')
