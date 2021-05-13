@@ -6,9 +6,9 @@ import sys
 
 print('---------------------------')
 while True:
-    print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.now file')
+    print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.current opened file')
     choice = input()
-    if choice != '1' and choice != '2' and choice != '3':
+    if choice != '1' and choice != '2' and choice != '3' and choice != '4':
         print('please input 1 or 2 or 3')
     elif choice == '1':
         print('please input file name :')
@@ -17,7 +17,7 @@ while True:
     else:
         break
 
-from script.keyboard_mouse_ctrl import mouse_click
+from script.keyboard_mouse_ctrl import mouse_click, my_type
 from script.windows_api import message_box
 from script.inference_core import Inference
 
@@ -32,7 +32,7 @@ print('---------------------------')
 print('Start')
 print('---------------------------')
 
-mouse_click((my_infer.x1+my_infer.x2)//2, (my_infer.y1+my_infer.y2)//2)
+my_infer.active_nx()
 
 if choice == '1':
     temp_str = my_infer.single_file_mode(target_name)
@@ -47,5 +47,7 @@ elif choice == '3':
     # f = open(export_dir_name + 'terminal.txt', 'w')
     # f.write(terminal_str)
     # f.close()
+elif choice == '4':
+    my_infer.current_opened_file(export_dir_name)
 
 print('DONE')

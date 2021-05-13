@@ -45,7 +45,7 @@ print('---------------------------')
 print('Start')
 print('---------------------------')
 
-mouse_click((my_infer.x1+my_infer.x2)//2, (my_infer.y1+my_infer.y2)//2)
+my_infer.active_nx()
 open_vim(target_name)
 
 template = cv2.imread('template.png', cv2.IMREAD_GRAYSCALE)
@@ -67,7 +67,7 @@ print('y1 : ' + str(my_infer.y1))
 # cv2.imshow("img", img_gray)
 # cv2.waitKey()
 # time.sleep(1)
-# mouse_click((my_infer.x1+my_infer.x2)//2, (my_infer.y1+my_infer.y2)//2)
+# my_infer.active_nx()
 
 
 
@@ -96,7 +96,7 @@ else:
         quit_vim()
         exit()
 
-mouse_click((my_infer.x1+my_infer.x2)//2, (my_infer.y1+my_infer.y2)//2)
+my_infer.active_nx()
 
 img = my_infer.screen()
 temp_str = my_infer.infer(img, vertical_num=9, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]

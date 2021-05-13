@@ -11,7 +11,7 @@ from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
-from script.windows_api import detect_nx, message_box
+from script.windows_api import detect_nx, message_box, active_window, win_clip
 from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 class Inference:
@@ -75,6 +75,22 @@ class Inference:
         self.vertical_num = (self.y2 - self.y1) // self.h
         self.horizontal_num = (self.x2 - self.x1) // self.w
 
+    def active_nx(self, sec=0.5):
+        active_window(self.hwnd)
+        time.sleep(sec)
+
+    def current_opened_file(self, export_dir_name):
+        my_type('esc_key')
+        my_type('esc_key')
+        my_type(":echo expand('%:p')")
+        my_type('enter_key')
+        img = self.screen(vim_mode=0)
+        terminal_str = self.infer(img, vim_mode=False)[0]
+        file_name = terminal_str.split('\n')[-2]
+        my_type('new_tab')
+        my_str = self.single_file_mode(file_name)
+        self.write_in_file(export_dir_name, 'current_opened_file.txt', my_str)
+
     def delete_return_line(self, my_str, cmd):
         split_str = my_str.split('\n')
         target_line_return = 0
@@ -93,14 +109,14 @@ class Inference:
                 target_line_cmd = i
                 break
         return result, target_line_cmd
-        
+
     def recursive_vim(self):
         my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
         my_type('enter_key')
         while True:
             img = self.screen(vim_mode=0)
             terminal_str = self.infer(img, vim_mode=False)[0]
-            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, "find . | grep '[.][/][^.]' > ~/aaa.tmp")
+            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, "~/aaa.tmp")
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
             # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
             if terminal_str.split('\n')[target_line_cmd+1] == '':
@@ -131,12 +147,12 @@ class Inference:
 
         dir_arr = dir_str.split('\n')
         if len(dir_arr) > 50:
-            if message_box(hwnd, 'Detect {:d} files in this directory, continue ?'.format(len(dir_arr))) == 0:
+            if message_box(self.hwnd, 'Detect {:d} files in this directory, continue ?'.format(len(dir_arr))) == 0:
                 print('end program')
                 exit()
 
         print(dir_arr)
-        mouse_click((self.x1+self.x2)//2, (self.y1+self.y2)//2)
+        self.active_nx()
 
         for item in dir_arr:
             my_type('wc -l < ' + item)
@@ -228,8 +244,8 @@ class Inference:
                 else:
                     mid = crop_img.copy()
                     if (self.log_flag):
-                        cv2.imwrite('log/{:04d}.png'.format(log_cou), mid)
-                        log_cou += 1
+                        cv2.imwrite('log/{:04d}.png'.format(self.log_cou), mid)
+                        self.log_cou += 1
                     # cv2.imshow('mid', mid)
                     # cv2.waitKey()
                     mid = (mid/255).astype('int8')

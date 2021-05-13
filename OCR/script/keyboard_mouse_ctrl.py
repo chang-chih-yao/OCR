@@ -4,6 +4,7 @@ from pynput.mouse import Button
 from pynput import keyboard
 import time
 from script.cfg import load_cfg
+from script.windows_api import win_clip
 
 
 def on_press(key):
@@ -41,6 +42,30 @@ def my_type(my_str = ''):
             my_keyboard.release(Key.enter)
             time.sleep(cmd_speed)
             return
+        elif (my_str == 'new_tab'):
+            my_keyboard.press(Key.ctrl)
+            my_keyboard.press(Key.shift)
+            my_keyboard.press('t')
+            my_keyboard.release('t')
+            my_keyboard.release(Key.shift)
+            my_keyboard.release(Key.ctrl)
+            time.sleep(cmd_speed)
+            time.sleep(1)
+            return
+        elif (my_str == 'paste'):
+            my_keyboard.press(Key.ctrl)
+            my_keyboard.press(Key.shift)
+            my_keyboard.press('v')
+            my_keyboard.release('v')
+            my_keyboard.release(Key.shift)
+            my_keyboard.release(Key.ctrl)
+            time.sleep(cmd_speed)
+            return
+        elif (my_str == 'esc_key'):
+            my_keyboard.press(Key.esc)
+            my_keyboard.release(Key.esc)
+            time.sleep(type_speed)
+            return
         
         for i in range(len(my_str)):
             if exit_flag == 1:
@@ -63,9 +88,13 @@ def mouse_click(x, y):
 def open_vim(my_str='', recursive_mode=False):
     if my_str != '':
         if not recursive_mode:
-            my_type('vim -u NONE -R ' + my_str)
+            cmd = 'vim -u NONE -R ' + my_str
         else:
-            my_type('vim -u NONE ' + my_str)
+            cmd = 'vim -u NONE ' + my_str
+        # win_clip(cmd)
+        # my_type('paste')
+        my_type(cmd)
+        
         my_type('enter_key')
         my_type(':set nu')
         my_type('enter_key')
