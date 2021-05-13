@@ -84,7 +84,7 @@ class Inference:
         my_type('esc_key')
         my_type(":echo expand('%:p')")
         my_type('enter_key')
-        img = self.screen(vim_mode=0)
+        img = self.screen(vim_mode=False)
         terminal_str = self.infer(img, vim_mode=False)[0]
         file_name = terminal_str.split('\n')[-2]
         my_type('new_tab')
@@ -114,7 +114,7 @@ class Inference:
         my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
         my_type('enter_key')
         while True:
-            img = self.screen(vim_mode=0)
+            img = self.screen(vim_mode=False)
             terminal_str = self.infer(img, vim_mode=False)[0]
             terminal_str, target_line_cmd = self.delete_return_line(terminal_str, "~/aaa.tmp")
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
@@ -157,7 +157,7 @@ class Inference:
         for item in dir_arr:
             my_type('wc -l < ' + item)
             my_type('enter_key')
-            img = self.screen(vim_mode=0)
+            img = self.screen(vim_mode=False)
             terminal_str = self.infer(img, vim_mode=False)[0]
             terminal_str, target_line_cmd = self.delete_return_line(terminal_str, 'wc -l <')
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
@@ -196,8 +196,8 @@ class Inference:
         f.write(my_str)
         f.close()
     
-    def screen(self, threshold=1, vim_mode=1):
-        if vim_mode == 0:
+    def screen(self, threshold=1, vim_mode=True):
+        if vim_mode == False:
             img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 2*self.h), all_screens=True)
         else:
             img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)

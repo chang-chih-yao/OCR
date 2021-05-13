@@ -40,7 +40,7 @@ if choice == '1':
 elif choice == '2':
     my_infer.recursive_mode(export_dir_name)
 elif choice == '3':
-    img = my_infer.screen(vim_mode=0)
+    img = my_infer.screen(vim_mode=False)
     terminal_str = my_infer.infer(img, vim_mode=False)[0]
     print('-------------------- output -------------------------')
     print(terminal_str)
