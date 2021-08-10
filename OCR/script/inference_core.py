@@ -7,7 +7,6 @@ import os
 import matplotlib.pyplot as plt
 
 from script.gen_dataset_fast import gen_data
-from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
@@ -30,12 +29,13 @@ class Inference:
         # for key in config['cust']:
         #     print(key, config['cust'][key])
         self.difference = int(config['cust']['difference'])
+        self.threshold = int(config['cust']['threshold'])
 
         # --------------------------- create and load model ------------------------ #
         if config['cust']['build_model'] == '0':          # no model inside your directory
             if calibration:
                 temp_img = cv2.imread('gen_dataset.png', cv2.IMREAD_GRAYSCALE)
-                gen_data(temp_img, difference=2, img_from_png=True)
+                gen_data(temp_img, difference=2, img_from_png=True, threshold=self.threshold)
                 gen_train()
                 modify_cfg('build_model', 1)
             else:
@@ -196,7 +196,9 @@ class Inference:
         f.write(my_str)
         f.close()
     
-    def screen(self, threshold=1, vim_mode=True):
+    def screen(self, threshold=None, vim_mode=True):
+        if threshold is None:
+            threshold = self.threshold
         if vim_mode == False:
             img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 2*self.h), all_screens=True)
         else:

@@ -3,21 +3,26 @@ import os
 
 def build_cfg():
     config = configparser.ConfigParser()
-    config['DEFAULT'] = {'x1'       : '0',
-                        'y1'        : '0',
-                        'x2'        : '1920',
-                        'y2'        : '1080',
-                        'difference': '2',
-                        'type_speed': '0.05',
-                        'cmd_speed' : '0.5'}
-    config['cust']    = {'x1'       : '0',
-                        'y1'        : '0',
-                        'x2'        : '1920',
-                        'y2'        : '1080',
-                        'difference': '2',
-                        'type_speed': '0.05',
-                        'cmd_speed' : '0.5',
-                        'build_model': '0'}
+    config['DEFAULT'] = {'x1'           : '0',
+                        'y1'            : '0',
+                        'x2'            : '1920',
+                        'y2'            : '1080',
+                        'difference'    : '2',
+                        'type_speed'    : '0.05',
+                        'cmd_speed'     : '0.5',
+                        'build_model'   : '0',
+                        'threshold'     : '50'}
+    
+    config['cust']    = {'x1'           : '0',
+                        'y1'            : '0',
+                        'x2'            : '1920',
+                        'y2'            : '1080',
+                        'difference'    : '2',
+                        'type_speed'    : '0.05',
+                        'cmd_speed'     : '0.5',
+                        'build_model'   : '0',
+                        'threshold'     : '50'}
+    
     with open('cfg/cfg.ini', 'w') as configfile:
         config.write(configfile)
 
@@ -41,6 +46,3 @@ if os.path.isfile('cfg/cfg.ini'):
 else:
     build_cfg()
     print('create new cfg.ini in cfg/')
-
-if __name__ == '__main__':
-    build_cfg()
