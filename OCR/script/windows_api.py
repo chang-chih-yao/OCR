@@ -75,6 +75,16 @@ def win_clip(my_str=''):
     win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, my_str)
     win32clipboard.CloseClipboard()
 
+def check_win_clip(my_str=''):
+    win32clipboard.OpenClipboard()
+    d = win32clipboard.GetClipboardData(win32con.CF_UNICODETEXT)
+    win32clipboard.CloseClipboard()
+    if d != my_str:
+        return False
+    else:
+        return True
+    
+
 def background_screenshot(hwnd, width, height):
     wDC = win32gui.GetWindowDC(hwnd)
     dcObj=win32ui.CreateDCFromHandle(wDC)
@@ -115,6 +125,8 @@ def message_box(hwnd, my_str):
     else:
         print('message_box select error')
         return -1
+
+
 
 '''
 def send_input_text(hwnd, my_str=''):

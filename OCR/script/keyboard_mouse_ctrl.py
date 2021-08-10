@@ -85,6 +85,12 @@ def mouse_click(x, y):
     my_mouse.click(Button.left)
     time.sleep(type_speed)
 
+def mouse_click_mid(x, y):
+    my_mouse.position = (x, y)
+    time.sleep(cmd_speed)
+    my_mouse.click(Button.middle)
+    time.sleep(type_speed)
+
 def open_vim(my_str='', recursive_mode=False):
     if my_str != '':
         if not recursive_mode:
