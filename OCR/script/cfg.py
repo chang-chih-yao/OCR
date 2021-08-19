@@ -11,7 +11,7 @@ def build_cfg():
                         'type_speed'    : '0.05',
                         'cmd_speed'     : '0.5',
                         'build_model'   : '0',
-                        'threshold'     : '50'}
+                        'threshold'     : '1'}
     
     config['cust']    = {'x1'           : '0',
                         'y1'            : '0',
@@ -21,7 +21,7 @@ def build_cfg():
                         'type_speed'    : '0.05',
                         'cmd_speed'     : '0.5',
                         'build_model'   : '0',
-                        'threshold'     : '50'}
+                        'threshold'     : '1'}
     
     with open('cfg/cfg.ini', 'w') as configfile:
         config.write(configfile)
