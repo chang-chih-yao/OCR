@@ -44,9 +44,9 @@ elif choice == '3':
     terminal_str = my_infer.infer(img, vim_mode=False)[0]
     print('-------------------- output -------------------------')
     print(terminal_str)
-    # f = open(export_dir_name + 'terminal.txt', 'w')
-    # f.write(terminal_str)
-    # f.close()
+    f = open(export_dir_name + 'terminal.txt', 'w')
+    f.write(terminal_str)
+    f.close()
 elif choice == '4':
     my_infer.current_opened_file(export_dir_name)
 
