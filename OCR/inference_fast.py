@@ -13,12 +13,17 @@ import cv2
 from script.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag
 from script.windows_api import message_box, win_clip
 from script.inference_core import Inference
+from script.cfg import load_cfg
 
 def button_1(event):
     global x, y ,xstart, ystart, place_x1, place_y1, block_w, block_h
     global rec
-    x = root.winfo_pointerx() - root.winfo_rootx()
+    if cfg_x1 >= 1920:
+        x = 1920 + root.winfo_pointerx() - root.winfo_rootx()
+    else:
+        x = root.winfo_pointerx() - root.winfo_rootx()
     y = root.winfo_pointery() - root.winfo_rooty()
+    
     if x >= cfg_x1 and x < cfg_x2 and y >= cfg_y1 and y < cfg_y2:
         xstart, ystart = x, y
         #print("button 1 press : x, button 1 press : y = ", x, y)
@@ -30,7 +35,10 @@ def button_1(event):
         block_h = txt_h
         motion_cv.configure(width=block_w)
         motion_cv.configure(height=block_h)
-        motion_cv.place(x=place_x1, y=place_y1)
+        if cfg_x1 >= 1920:
+            motion_cv.place(x=place_x1 - 1920, y=place_y1)
+        else:
+            motion_cv.place(x=place_x1, y=place_y1)
     else:
         motion_cv.place_forget()
         root.attributes("-alpha", 0)
@@ -39,11 +47,17 @@ def button_1(event):
 
 def b1_Motion(event):
     global x, y, xstart, ystart, canvas_text_handle, canvas_text, place_x1, place_y1, block_w, block_h
-    x = root.winfo_pointerx() - root.winfo_rootx()
+    if cfg_x1 >= 1920:
+        x = 1920 + root.winfo_pointerx() - root.winfo_rootx()
+    else:
+        x = root.winfo_pointerx() - root.winfo_rootx()
     y = root.winfo_pointery() - root.winfo_rooty()
     if x >= cfg_x1 and x < cfg_x2 and y >= cfg_y1 and y < cfg_y2:
         #print("event.x, event.y = ", x, y)
-        canvas.place(x = x, y = y)
+        if cfg_x1 >= 1920:
+            canvas.place(x = x - 1920, y = y)
+        else:
+            canvas.place(x = x, y = y)
         canvas_text = 'press ESC to exit\n' + str(x - xstart) + ', ' + str(y - ystart)
         canvas.itemconfig(canvas_text_handle, text=canvas_text)
 
@@ -60,7 +74,11 @@ def b1_Motion(event):
 
 def buttonRelease_1(event):
     global xend, yend, place_x1, place_y1, block_w, block_h
-    xend, yend = root.winfo_pointerx() - root.winfo_rootx(), root.winfo_pointery() - root.winfo_rooty()
+    if cfg_x1 >= 1920:
+        xend = 1920 + root.winfo_pointerx() - root.winfo_rootx()
+    else:
+        xend = root.winfo_pointerx() - root.winfo_rootx()
+    yend = root.winfo_pointery() - root.winfo_rooty()
     if xend >= cfg_x1 and xend < cfg_x2 and yend >= cfg_y1 and yend < cfg_y2:
         if xend <= place_x1 or yend <= place_y1:
             motion_cv.place_forget()
@@ -78,7 +96,7 @@ def buttonRelease_1(event):
             ret, th1 = cv2.threshold(frame, 1, 255, cv2.THRESH_BINARY)
             # cv2.imshow("img", th1)
             # cv2.waitKey()
-            print(th1.shape)
+            #print(th1.shape)
             terminal_str = my_infer.infer(th1, vertical_num=int(th1.shape[0]/18), horizontal_num=int(th1.shape[1]/9), vim_mode=False)[0]
             if terminal_str[len(terminal_str)-1] == '\n':
                 terminal_str = terminal_str[:-1]
@@ -93,8 +111,11 @@ def buttonRelease_1(event):
         sys_out(None)
 
 def my_motion_test(event=None):
-    global place_x1, place_x2, place_y1, place_y2
-    x = root.winfo_pointerx() - root.winfo_rootx()
+    global place_x1, place_y1
+    if cfg_x1 >= 1920:
+        x = 1920 + root.winfo_pointerx() - root.winfo_rootx()
+    else:
+        x = root.winfo_pointerx() - root.winfo_rootx()
     y = root.winfo_pointery() - root.winfo_rooty()
     if x >= cfg_x1 and x < cfg_x2 and y >= cfg_y1 and y < cfg_y2:
         new_w = x - cfg_x1 + 1
@@ -104,7 +125,10 @@ def my_motion_test(event=None):
         #print(x, y, place_x1, place_y1)
         motion_cv.configure(width=txt_w)
         motion_cv.configure(height=txt_h)
-        motion_cv.place(x=place_x1, y=place_y1)
+        if cfg_x1 >= 1920:
+            motion_cv.place(x=place_x1 - 1920, y=place_y1)
+        else:
+            motion_cv.place(x=place_x1, y=place_y1)
     else:
         motion_cv.configure(width=1)
         motion_cv.configure(height=1)
@@ -115,6 +139,7 @@ def sys_out(even):
 
 if __name__ == '__main__':
     my_infer = Inference(calibration=False)
+    config = load_cfg()
     export_file_root = 'export/'
     now = datetime.now()
     export_dir_name = export_file_root + now.strftime("%Y%m%d_%H_%M_%S") + '/'
@@ -161,11 +186,21 @@ if __name__ == '__main__':
         elif choice == '4':
             my_infer.current_opened_file(export_dir_name)
         elif choice == '5':
+            txt_w = 9
+            txt_h = 18
+            cfg_x1 = int(config['cust']['x1'])
+            cfg_y1 = int(config['cust']['y1'])
+            cfg_x2 = int(config['cust']['x2'])
+            cfg_y2 = int(config['cust']['y2']) + txt_h*2
+
             root = tk.Tk()
             root.overrideredirect(True)         # 隱藏視窗的標題列
-            root.attributes("-alpha", 0.3)      # 視窗透明度30%
+            root.attributes("-alpha", 0.4)      # 視窗透明度30%
             root.attributes('-topmost', True)
-            root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+            if cfg_x1 >= 1920:
+                root.geometry("{0}x{1}+1920+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+            else:
+                root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
             #root.configure(bg="black")
 
             x, y = 0, 0
@@ -178,21 +213,15 @@ if __name__ == '__main__':
             canvas.configure(height=50)
             canvas.configure(bg="yellow")
             canvas.configure(highlightthickness=0)  # 高亮厚度
-            canvas.place(x=(root.winfo_screenwidth()-500), y=50)
+            if cfg_x1 >= 1920:
+                canvas.place(x=1920+(root.winfo_screenwidth()-500), y=50)
+            else:
+                canvas.place(x=(root.winfo_screenwidth()-500), y=50)
             canvas_text = 'press ESC to exit'
             canvas_text_handle = canvas.create_text(60, 25,font='Arial -12 bold',text=canvas_text)
 
-
-            txt_w = 9
-            txt_h = 18
-            cfg_x1 = 1
-            cfg_y1 = 144
-            cfg_x2 = 1900
-            cfg_y2 = 972 + txt_h*2
             place_x1 = 0
-            place_x2 = 0
             place_y1 = 0
-            place_y2 = 0
             block_w = 0
             block_h = 0
             motion_cv = tk.Canvas(root)
@@ -202,7 +231,7 @@ if __name__ == '__main__':
             motion_cv.configure(height=txt_h)
             motion_cv.configure(bg="red")
             motion_cv.config(highlightthickness=0) # 無邊框
-            motion_cv.place(x=cfg_x1, y=cfg_y1)
+            motion_cv.place(x=0, y=0)
 
             # 繫結事件
             #root.bind("<B1-Motion>", move)   # 滑鼠左鍵移動->顯示當前遊標位置
