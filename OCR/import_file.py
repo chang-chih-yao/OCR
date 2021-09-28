@@ -13,7 +13,7 @@ if is_nx_active == False:
 
 active_window(hwnd)
 
-target_folder = r'D:\Cychang\Downloads\audio_data_path\5575_mix\gen\env'
+target_folder = r'D:\Cychang\Downloads\audio_data_path\5575_mix\gen\i2s'
 
 for dirPath, dirNames, fileNames in os.walk(target_folder):
     dataset_dir = dirPath.replace('\\', '/')
