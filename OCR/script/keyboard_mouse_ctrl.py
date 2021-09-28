@@ -12,7 +12,7 @@ def on_press(key):
     press backspace key on your keyboard anytime to stop program
     '''
     global exit_flag
-    if key == Key.backspace:
+    if key == Key.backspace and detect_exit_flag == 1:
         print('exit()')
         exit_flag = 1
         return False
@@ -117,6 +117,16 @@ def quit_vim():
     my_type('enter_key')
     time.sleep(cmd_speed)
 
+def detect_stop_program_open():
+    global detect_exit_flag
+    detect_exit_flag = 1
+
+def detect_stop_program_close():
+    global detect_exit_flag
+    detect_exit_flag = 0
+
+def get_exit_flag():
+    return exit_flag
 
 config = load_cfg()
 type_speed = float(config['cust']['type_speed'])
@@ -126,5 +136,6 @@ my_keyboard = pynput.keyboard.Controller()
 my_mouse = pynput.mouse.Controller()
 
 exit_flag = 0
+detect_exit_flag = 1
 listener = keyboard.Listener(on_press=on_press)
 listener.start()

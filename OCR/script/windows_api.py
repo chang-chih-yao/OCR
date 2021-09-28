@@ -50,7 +50,7 @@ def detect_nx(targetTitle='NoMachine'):
     another_monitor = False
     is_nx_active = False
     hwnd = get_windows_handle(targetTitle)
-    active_window(hwnd)
+    #active_window(hwnd)
     if hwnd == 0:
         print('not found NoMachine!!!')
         return hwnd, is_nx_active, another_monitor

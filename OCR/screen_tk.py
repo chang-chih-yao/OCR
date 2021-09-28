@@ -1,6 +1,8 @@
-import pyautogui
+from PIL import ImageGrab
 import tkinter as tk
 import math
+import numpy as np
+import cv2
 
 def move(event):
     global x, y ,xstart,ystart
@@ -69,8 +71,14 @@ def buttonRelease_1(event):
         else:
             motion_cv.place_forget()
             root.attributes("-alpha", 0)
-            img = pyautogui.screenshot(region=[place_x1, place_y1, block_w, block_h]) # x,y,w,h
+            #img = pyautogui.screenshot(region=[place_x1, place_y1, block_w, block_h]) # x,y,w,h
+            img = ImageGrab.grab(bbox=(place_x1, place_y1, place_x1+block_w, place_y1+block_h), all_screens=True)
+            img_np = np.array(img)
+            frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            ret, th1 = cv2.threshold(frame, 1, 255, cv2.THRESH_BINARY)
             img.save('screenshot.png')
+            # cv2.imshow("img", th1)
+            # cv2.waitKey()
             sys_out(None)
     else:
         motion_cv.place_forget()
@@ -81,7 +89,8 @@ def buttonRelease_1(event):
 def button_3(event):
     global xstart,ystart,xend,yend
     root.attributes("-alpha", 0)
-    img = pyautogui.screenshot(region=[xstart,ystart,xend-xstart,yend-ystart]) # x,y,w,h
+    #img = pyautogui.screenshot(region=[xstart,ystart,xend-xstart,yend-ystart]) # x,y,w,h
+    img = ImageGrab.grab(bbox=(place_x1, place_y1, place_x1+block_w, place_y1+block_h), all_screens=True)
     img.save('screenshot.png')
     sys_out(None)
 

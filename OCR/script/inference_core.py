@@ -241,6 +241,7 @@ class Inference:
                 crop_img = input_img[y:y+self.h, x:x+self.w]
                 if crop_img.shape[0] != self.h or crop_img.shape[1] != self.w:
                     return temp_s, file_eof, line_cou
+                
                 if (np.all((crop_img.flatten() == 0)) or np.all((crop_img.flatten() == 255))):   # skip space image
                     result = 47                                                                  # char_list[47] == ' '
                 else:
