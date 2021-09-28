@@ -77,6 +77,7 @@ def buttonRelease_1(event):
             frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
             ret, th1 = cv2.threshold(frame, 1, 255, cv2.THRESH_BINARY)
             img.save('screenshot.png')
+            cv2.imwrite('screenshot_binary.jpg', th1)
             # cv2.imshow("img", th1)
             # cv2.waitKey()
             sys_out(None)

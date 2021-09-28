@@ -90,16 +90,19 @@ if temp_str == my_infer.char_list:
 else:
     input_choise = 'y'
 
+my_infer.active_nx()
+time.sleep(0.5)
+
 if (input_choise == 'y' or 'Y'):
     print('need to build new model')
     # cv2.imshow("img", img)
     # cv2.waitKey()
     # time.sleep(1)
     threshold = int(my_config['cust']['threshold'])
-    gen_data(img, difference=2, threshold=threshold)
+    gen_data(img, difference=my_infer.difference, threshold=threshold)
     gen_train()
-    my_infer.char_list, my_infer.difference, my_infer.category, my_infer.img_arr = load_model(difference=2)
-    modify_cfg('difference', my_infer.difference)
+    my_infer.char_list, my_infer.difference, my_infer.category, my_infer.img_arr = load_model(difference=my_infer.difference)
+    #modify_cfg('difference', my_infer.difference)
 
     img = my_infer.screen()
     temp_str = my_infer.infer(img, vertical_num=1, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]
@@ -111,8 +114,6 @@ if (input_choise == 'y' or 'Y'):
         quit_vim()
         exit()
 
-
-my_infer.active_nx()
 
 img = my_infer.screen()
 temp_str = my_infer.infer(img, vertical_num=9, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]

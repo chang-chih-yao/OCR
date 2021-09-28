@@ -3,7 +3,7 @@ import cv2
 import os
 import shutil
 
-def gen_data(img, difference=2, img_from_png=False, threshold_step=1, char_len=95, dataset_dir='dataset_fast/', threshold=1):
+def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=95, dataset_dir='dataset_fast/', threshold=1):
     print('start gen dataset')
     
     width = 9     # every char on your monitor has same size
@@ -38,4 +38,4 @@ def gen_data(img, difference=2, img_from_png=False, threshold_step=1, char_len=9
 
 if __name__ == '__main__':
     temp_img = cv2.imread('../gen_dataset.png', cv2.IMREAD_GRAYSCALE)
-    gen_data(temp_img, difference=2, img_from_png=True, dataset_dir='../dataset_fast/')
+    gen_data(temp_img, difference=1, img_from_png=True, dataset_dir='../dataset_fast/')

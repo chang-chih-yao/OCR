@@ -90,7 +90,7 @@ def buttonRelease_1(event):
             root.attributes("-alpha", 0)
             #img = pyautogui.screenshot(region=[place_x1, place_y1, block_w, block_h]) # x,y,w,h
             img = ImageGrab.grab(bbox=(place_x1, place_y1, place_x1+block_w, place_y1+block_h), all_screens=True)
-            img.save('screenshot.png')
+            #img.save('screenshot.png')
             img_np = np.array(img)
             frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
             ret, th1 = cv2.threshold(frame, 1, 255, cv2.THRESH_BINARY)
@@ -139,12 +139,7 @@ def sys_out(even):
 
 if __name__ == '__main__':
     my_infer = Inference(calibration=False)
-    config = load_cfg()
     export_file_root = 'export/'
-    now = datetime.now()
-    export_dir_name = export_file_root + now.strftime("%Y%m%d_%H_%M_%S") + '/'
-    os.mkdir(export_dir_name)
-    print('create folder : ' + export_dir_name)
 
     print('---------------------------')
     print('Start')
@@ -164,6 +159,12 @@ if __name__ == '__main__':
         elif choice == '1':
             print('please input file name :')
             target_name = input()
+
+        if choice != '5':
+            now = datetime.now()
+            export_dir_name = export_file_root + now.strftime("%Y%m%d_%H_%M_%S") + '/'
+            os.mkdir(export_dir_name)
+            print('create folder : ' + export_dir_name)
 
         detect_stop_program_open()
         my_infer.active_nx()
@@ -186,12 +187,12 @@ if __name__ == '__main__':
         elif choice == '4':
             my_infer.current_opened_file(export_dir_name)
         elif choice == '5':
-            txt_w = 9
-            txt_h = 18
-            cfg_x1 = int(config['cust']['x1'])
-            cfg_y1 = int(config['cust']['y1'])
-            cfg_x2 = int(config['cust']['x2'])
-            cfg_y2 = int(config['cust']['y2']) + txt_h*2
+            txt_w = my_infer.w
+            txt_h = my_infer.h
+            cfg_x1 = my_infer.x1
+            cfg_y1 = my_infer.y1
+            cfg_x2 = my_infer.x2
+            cfg_y2 = my_infer.y2 + txt_h*2
 
             root = tk.Tk()
             root.overrideredirect(True)         # 隱藏視窗的標題列

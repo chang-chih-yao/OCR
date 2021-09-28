@@ -35,7 +35,7 @@ class Inference:
         if config['cust']['build_model'] == '0':          # no model inside your directory
             if calibration:
                 temp_img = cv2.imread('gen_dataset.png', cv2.IMREAD_GRAYSCALE)
-                gen_data(temp_img, difference=2, img_from_png=True, threshold=self.threshold)
+                gen_data(temp_img, difference=self.difference, img_from_png=True, threshold=self.threshold)
                 gen_train()
                 modify_cfg('build_model', 1)
             else:
@@ -239,6 +239,7 @@ class Inference:
             front_str = ''
             for j in range(horizontal_num):
                 crop_img = input_img[y:y+self.h, x:x+self.w]
+                #print(crop_img[0, :])
                 if crop_img.shape[0] != self.h or crop_img.shape[1] != self.w:
                     return temp_s, file_eof, line_cou
                 
@@ -257,9 +258,10 @@ class Inference:
                     result_sum = np.sum(result_arr, axis=1)                                      # (difference*category,)   int32
                     result = np.argmin(result_sum) // self.difference
                     if draw_plot:
-                        line1.set_ydata(result_sum[::2])
+                        #line1.set_ydata(result_sum[::2])  # if difference == 2
+                        line1.set_ydata(result_sum)        # if difference == 1
                         fig.canvas.draw()
-                        time.sleep(0.5)
+                        time.sleep(1)
                         fig.canvas.flush_events()
 
                     #print(result, self.char_list[result])
