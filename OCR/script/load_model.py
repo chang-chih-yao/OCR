@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import os
 
-def load_model(difference):
-    print('load model')
+def load_model():
+    print('\n------------ load model begin ------------')
     file_list = []
     char_list = 'abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'
     category = len(char_list)
@@ -15,9 +15,8 @@ def load_model(difference):
         for f in fileNames:
             file_list.append(training_dir + '/' + f)
 
-    if(int(len(file_list)/category) != difference):
-        print('incorrect difference number!!!! (should be {:d})'.format(int(len(file_list)/category)))
-        exit()
+    data_set_num = int(len(file_list)/category)
+    print('There are {:d} dataset'.format(data_set_num))
 
     img_arr = np.array([], dtype='int8')
 
@@ -27,7 +26,7 @@ def load_model(difference):
         img = img.flatten()
         img_arr = np.append(img_arr, img)
 
-    img_arr = np.reshape(img_arr, (difference*category, 18*9))
+    img_arr = np.reshape(img_arr, (data_set_num*category, 18*9))
     print('img_arr.shape :', img_arr.shape)
-    print('Model successfully loaded')
-    return char_list, difference, category, img_arr
+    print('------------ model successfully loaded ------------\n')
+    return char_list, data_set_num, category, img_arr

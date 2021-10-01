@@ -10,7 +10,7 @@ from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
-from script.windows_api import detect_nx, message_box, active_window, win_clip
+from script.windows_api import detect_nx, message_box, active_window, win_clip, get_windows_location
 from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 class Inference:
@@ -41,7 +41,7 @@ class Inference:
             else:
                 print('please run calibration.py first')
                 exit()
-        self.char_list, self.difference, self.category, self.img_arr = load_model(self.difference)
+        self.char_list, self.data_set_num, self.category, self.img_arr = load_model()
 
         # 1080p monitor size
         if calibration:
@@ -78,6 +78,10 @@ class Inference:
     def active_nx(self, sec=0.5):
         active_window(self.hwnd)
         time.sleep(sec)
+    
+    def mouse_click_in_middle_NX(self):
+        tmp_rect = get_windows_location(self.hwnd)
+        mouse_click(int((tmp_rect[0] + tmp_rect[2])/2), int((tmp_rect[1] + tmp_rect[3])/2))
 
     def current_opened_file(self, export_dir_name):
         my_type('esc_key')
@@ -205,8 +209,8 @@ class Inference:
             img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
         img_np = np.array(img)
         frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
-        ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
-        return th1
+        #ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        return frame
 
     def infer(self, input_img, vertical_num=None, horizontal_num=None, file_eof=0, line_cou=1, vim_mode=True, draw_plot=False):
         #global log_cou, wait_correct_num
@@ -239,13 +243,22 @@ class Inference:
             front_str = ''
             for j in range(horizontal_num):
                 crop_img = input_img[y:y+self.h, x:x+self.w]
-                #print(crop_img[0, :])
+                
                 if crop_img.shape[0] != self.h or crop_img.shape[1] != self.w:
                     return temp_s, file_eof, line_cou
                 
                 if (np.all((crop_img.flatten() == 0)) or np.all((crop_img.flatten() == 255))):   # skip space image
                     result = 47                                                                  # char_list[47] == ' '
                 else:
+                    ################## detect background color ##################
+                    bg_color = crop_img[0, 0]   # assume [0, 0] is bg color
+                    for a in range(self.h):
+                        for b in range(self.w):
+                            if crop_img[a, b] == bg_color:
+                                crop_img[a, b] = 0
+                            else:
+                                crop_img[a, b] = 255
+                    ################## detect background color ##################
                     mid = crop_img.copy()
                     if (self.log_flag):
                         cv2.imwrite('log/{:04d}.png'.format(self.log_cou), mid)
@@ -255,11 +268,11 @@ class Inference:
                     mid = (mid/255).astype('int8')
                     mid = mid.flatten()
                     result_arr = np.absolute(self.img_arr - mid)
-                    result_sum = np.sum(result_arr, axis=1)                                      # (difference*category,)   int32
-                    result = np.argmin(result_sum) // self.difference
+                    result_sum = np.sum(result_arr, axis=1)                                      # (data_set_num*category,)   int32
+                    result = np.argmin(result_sum) // self.data_set_num
                     if draw_plot:
-                        #line1.set_ydata(result_sum[::2])  # if difference == 2
-                        line1.set_ydata(result_sum)        # if difference == 1
+                        #line1.set_ydata(result_sum[::2])  # if data_set_num == 2
+                        line1.set_ydata(result_sum)        # if data_set_num == 1
                         fig.canvas.draw()
                         time.sleep(1)
                         fig.canvas.flush_events()

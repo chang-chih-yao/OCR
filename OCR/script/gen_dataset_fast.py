@@ -3,7 +3,7 @@ import cv2
 import os
 import shutil
 
-def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=95, dataset_dir='dataset_fast/', threshold=1):
+def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=95, dataset_dir='dataset_fast/', threshold=1, append_new_data = False, dataset_name='binary_data_'):
     print('start gen dataset')
     
     width = 9     # every char on your monitor has same size
@@ -11,13 +11,14 @@ def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=9
 
     print(img.shape)
 
-    if(os.path.isdir(dataset_dir)):
-        shutil.rmtree(dataset_dir)
-    os.mkdir(dataset_dir)
+    if append_new_data == False:
+        if(os.path.isdir(dataset_dir)):
+            shutil.rmtree(dataset_dir)
+        os.mkdir(dataset_dir)
 
     for i in range(difference):
-        os.mkdir(dataset_dir + 'binary_data_' + str(i*threshold_step+threshold) + '/')
-        os.mkdir(dataset_dir + 'binary_data_' + str(i*threshold_step+threshold) + '/' + 'fast/')
+        os.mkdir(dataset_dir + dataset_name + str(i*threshold_step+threshold) + '/')
+        os.mkdir(dataset_dir + dataset_name + str(i*threshold_step+threshold) + '/' + 'fast/')
         
         ret, th1 = cv2.threshold(img, i*threshold_step+threshold, 255, cv2.THRESH_BINARY)
         if img_from_png:
@@ -28,7 +29,7 @@ def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=9
         
         for j in range(char_len):
             crop_img = th1[y:y+height, x:x+width]
-            cv2.imwrite('{:s}binary_data_{:d}/fast/{:04d}.png'.format(dataset_dir, i*threshold_step+threshold, j), crop_img)
+            cv2.imwrite('{:s}{:d}/fast/{:04d}.png'.format(dataset_dir + dataset_name, i*threshold_step+threshold, j), crop_img)
             # cv2.imshow('reSize2', crop_img)
             # cv2.waitKey()
             x += width

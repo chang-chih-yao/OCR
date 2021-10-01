@@ -44,7 +44,7 @@ def active_window(hwnd):
 
 def get_windows_location(hwnd):
     rect = win32gui.GetWindowRect(hwnd)
-    return rect[2]
+    return rect
 
 def detect_nx(targetTitle='NoMachine'):
     another_monitor = False
@@ -54,7 +54,7 @@ def detect_nx(targetTitle='NoMachine'):
     if hwnd == 0:
         print('not found NoMachine!!!')
         return hwnd, is_nx_active, another_monitor
-    elif get_windows_location(hwnd) > 2000:
+    elif get_windows_location(hwnd)[2] > 2000:
         another_monitor = True
         is_nx_active = True
         print('nx in second monitor')

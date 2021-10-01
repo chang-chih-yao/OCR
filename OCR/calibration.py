@@ -46,11 +46,14 @@ if os.path.isdir(export_file_root):
 else:
     os.mkdir(export_file_root)
 
-print('---------------------------')
-print('Start')
-print('---------------------------')
+
+print('Start\n')
+
 
 my_infer.active_nx()
+my_infer.mouse_click_in_middle_NX()
+my_type('cd /rsc/R7227/open/export_file')
+my_type('enter_key')
 open_vim(target_name)
 
 template = cv2.imread('template.png', cv2.IMREAD_GRAYSCALE)
@@ -91,6 +94,7 @@ else:
     input_choise = 'y'
 
 my_infer.active_nx()
+my_infer.mouse_click_in_middle_NX()
 time.sleep(0.5)
 
 if (input_choise == 'y' or 'Y'):
@@ -101,8 +105,7 @@ if (input_choise == 'y' or 'Y'):
     threshold = int(my_config['cust']['threshold'])
     gen_data(img, difference=my_infer.difference, threshold=threshold)
     gen_train()
-    my_infer.char_list, my_infer.difference, my_infer.category, my_infer.img_arr = load_model(difference=my_infer.difference)
-    #modify_cfg('difference', my_infer.difference)
+    my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model()
 
     img = my_infer.screen()
     temp_str = my_infer.infer(img, vertical_num=1, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]
@@ -146,12 +149,32 @@ if cmp('compare_file/calibration.txt', export_dir_name + target_name):
     modify_cfg('y1', my_infer.y1)
     modify_cfg('x2', my_infer.x2)
     modify_cfg('y2', my_infer.y2)
-    print('----------------')
-    print('PASS !!!!')
-    print('now you can use inference_fast.py script')
 else:
     print('----------------')
-    print('FAIL !!!!!!!')
+    print('calibration FAIL !!!!!!!')
+    exit()
+
+my_type('clear')
+my_type('enter_key')
+my_type('clear')
+my_type('enter_key')
+my_type('python /rsc/R7227/.local/open/bold_gen.py')
+my_type('enter_key')
+img = my_infer.screen(vim_mode=False)
+ret, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
+gen_data(th1[my_infer.h:, :], append_new_data=True, dataset_name='binary_data_bold_')
+gen_train()
+my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model()
+
+temp_str, file_eof, line_cou = my_infer.infer(img, vertical_num=my_infer.y2//my_infer.h, horizontal_num=(my_infer.x2-my_infer.x1)//my_infer.w, vim_mode=False)
+
+if temp_str.split('\n')[1] == '        abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?':
+    print('\n----------------')
+    print('calibration PASS !!!!')
+    print('now you can use inference_fast.py script')
+else:
+    print('\n----------------')
+    print('calibration FAIL !!!!!!!')
     exit()
 
 if message_box(my_infer.hwnd, 'Single file test success!\n Do you want continue for recursive test?') == 1:
