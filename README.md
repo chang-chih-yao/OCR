@@ -29,10 +29,6 @@ Total : 95
 * Font style : Default  
 ![Font style](OCR/misc/1.PNG)
 
-* Background color : #000000  
-Cursor color (Background color) : #000000  
-![Background color](OCR/misc/2.PNG)
-
 <!-- * Close windows notification  
 ![close windows notification](OCR/misc/3.PNG) -->
 
@@ -46,7 +42,7 @@ Cursor color (Background color) : #000000
     ```text
     python calibration.py
     ```
-    If you see **success** at the bottom of the terminal, it means the calibration is successful.
+    If you see **calibration PASS !!!!** at the bottom of the terminal, it means the calibration is successful.
 
 3. Now you can run inference_fast :
     ```text
