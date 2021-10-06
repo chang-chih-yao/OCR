@@ -31,6 +31,10 @@ class Inference:
         self.difference = int(config['cust']['difference'])
         self.threshold = int(config['cust']['threshold'])
 
+        # one char size
+        self.w = int(config['cust']['w'])
+        self.h = int(config['cust']['h'])
+
         # --------------------------- create and load model ------------------------ #
         if config['cust']['build_model'] == '0':          # no model inside your directory
             if calibration:
@@ -41,7 +45,7 @@ class Inference:
             else:
                 print('please run calibration.py first')
                 exit()
-        self.char_list, self.data_set_num, self.category, self.img_arr = load_model()
+        self.char_list, self.data_set_num, self.category, self.img_arr = load_model(w=self.w, h=self.h)
 
         # 1080p monitor size
         if calibration:
@@ -58,9 +62,6 @@ class Inference:
             self.x2 = int(config['cust']['x2'])
             self.y2 = int(config['cust']['y2'])
 
-        # one char size
-        self.w = 9
-        self.h = 18
 
         self.vim_text_bias_width = 8         # There are 8 chars(w*8 pixels) in front of the text after you use vim -u NONE open file and :set nu
 

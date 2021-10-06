@@ -102,7 +102,7 @@ def buttonRelease_1(event):
             # cv2.imshow("img", th1)
             # cv2.waitKey()
             #print(th1.shape)
-            terminal_str = my_infer.infer(frame, vertical_num=int(th1.shape[0]/18), horizontal_num=int(th1.shape[1]/9), vim_mode=False)[0]
+            terminal_str = my_infer.infer(frame, vertical_num=int(th1.shape[0]/txt_h), horizontal_num=int(th1.shape[1]/txt_w), vim_mode=False)[0]
             if terminal_str[len(terminal_str)-1] == '\n':
                 terminal_str = terminal_str[:-1]
             win_clip(terminal_str)

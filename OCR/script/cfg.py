@@ -3,7 +3,9 @@ import os
 
 def build_cfg():
     config = configparser.ConfigParser()
-    config['DEFAULT'] = {'x1'           : '0',
+    config['DEFAULT'] = {'w'           : '9',
+                        'h'           : '18',
+                        'x1'           : '0',
                         'y1'            : '0',
                         'x2'            : '1920',
                         'y2'            : '1080',
@@ -13,7 +15,9 @@ def build_cfg():
                         'build_model'   : '0',
                         'threshold'     : '1'}
     
-    config['cust']    = {'x1'           : '0',
+    config['cust']    = {'w'           : '9',
+                        'h'           : '18',
+                        'x1'           : '0',
                         'y1'            : '0',
                         'x2'            : '1920',
                         'y2'            : '1080',

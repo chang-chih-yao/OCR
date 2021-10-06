@@ -3,11 +3,11 @@ import cv2
 import os
 import shutil
 
-def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=95, dataset_dir='dataset_fast/', threshold=1, append_new_data = False, dataset_name='binary_data_'):
+def gen_data(img, difference=1, img_from_png=False, threshold_step=1, char_len=95, w=9, h=18, dataset_dir='dataset_fast/', threshold=1, append_new_data = False, dataset_name='binary_data_'):
     print('start gen dataset')
     
-    width = 9     # every char on your monitor has same size
-    height = 18   # every char on your monitor has same size
+    width = w     # every char on your monitor has same size
+    height = h    # every char on your monitor has same size
 
     print(img.shape)
 

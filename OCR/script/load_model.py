@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import os
 
-def load_model():
+def load_model(w=9, h=18):
     print('\n------------ load model begin ------------')
     file_list = []
     char_list = 'abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'
@@ -26,7 +26,7 @@ def load_model():
         img = img.flatten()
         img_arr = np.append(img_arr, img)
 
-    img_arr = np.reshape(img_arr, (data_set_num*category, 18*9))
+    img_arr = np.reshape(img_arr, (data_set_num*category, w*h))
     print('img_arr.shape :', img_arr.shape)
     print('------------ model successfully loaded ------------\n')
     return char_list, data_set_num, category, img_arr

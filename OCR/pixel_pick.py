@@ -103,8 +103,8 @@ def select_img():
 
 def find_contour(img):
     ret, th1 = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY)
-    cv2.imshow("origin", th1) 
-    im2, contours, hierarchy = cv2.findContours(th1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # cv2.imshow("origin", th1) 
+    contours, hierarchy = cv2.findContours(th1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #cv2.drawContours(img,contours,-1,(0,255,255),1) 
     
     cnt = contours[0]
@@ -125,15 +125,15 @@ def find_contour(img):
     x,y,w,h = cv2.boundingRect(cnt)
     print('------------')
     print(x)
-    print(x)
+    print(y)
     print(w)
     print(h)
-    cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),3)
-    cv2.imshow("drawContours", img) 
-    cv2.waitKey(0)
+    # cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),3)
+    # cv2.imshow("drawContours", img) 
+    # cv2.waitKey(0)
 
 #my_img = select_img()
 
-img = cv2.imread("test1.png")
-my_img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+img = cv2.imread("block_template.png")
+my_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 find_contour(my_img)
