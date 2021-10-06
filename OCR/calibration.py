@@ -93,6 +93,10 @@ def buttonRelease_1(event):
             #img = pyautogui.screenshot(region=[place_x1, place_y1, block_w, block_h]) # x,y,w,h
             img = ImageGrab.grab(bbox=(place_x1, place_y1, place_x1+block_w, place_y1+block_h), all_screens=True)
             print(place_x1, place_y1, place_x1+block_w, place_y1+block_h)
+            my_infer.x1 = place_x1
+            my_infer.y1 = place_y1
+            my_infer.x2 = place_x1+block_w
+            my_infer.y2 = place_y1+block_h
             #img.save('screenshot.png')
             # img_np = np.array(img)
             # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
@@ -290,12 +294,6 @@ root.bind("<Right>", right_key)
 root.mainloop()
 
 
-
-print(place_x1, place_y1, place_x1+block_w, place_y1+block_h)
-my_infer.x1 = place_x1
-my_infer.y1 = place_y1
-my_infer.x2 = place_x1+block_w
-my_infer.y2 = place_y1+block_h
 quit_vim()
 
 
