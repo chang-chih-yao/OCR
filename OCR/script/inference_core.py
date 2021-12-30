@@ -45,7 +45,13 @@ class Inference:
             else:
                 print('please run calibration.py first')
                 exit()
-        self.char_list, self.data_set_num, self.category, self.img_arr = load_model(w=self.w, h=self.h)
+        if calibration:
+            self.char_list = ''
+            self.data_set_num = ''
+            self.category = ''
+            self.img_arr = ''
+        else:
+            self.char_list, self.data_set_num, self.category, self.img_arr = load_model(w=self.w, h=self.h)
 
         # 1080p monitor size
         if calibration:
