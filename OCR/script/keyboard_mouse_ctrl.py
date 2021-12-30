@@ -42,6 +42,11 @@ def my_type(my_str = ''):
             my_keyboard.release(Key.enter)
             time.sleep(cmd_speed)
             return
+        elif (my_str == 'enter_key_fast'):
+            my_keyboard.press(Key.enter)
+            my_keyboard.release(Key.enter)
+            time.sleep(type_speed)
+            return
         elif (my_str == 'new_tab'):
             my_keyboard.press(Key.ctrl)
             my_keyboard.press(Key.shift)

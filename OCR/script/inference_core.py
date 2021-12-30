@@ -116,6 +116,8 @@ class Inference:
         return result, target_line_cmd
 
     def recursive_vim(self):
+        for t in range(50):
+            my_type('enter_key_fast')
         my_type("find . | grep '[.][/][^.]' > ~/aaa.tmp")
         my_type('enter_key')
         while True:
@@ -167,8 +169,9 @@ class Inference:
             terminal_str, target_line_cmd = self.delete_return_line(terminal_str, 'wc -l <')
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
             # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
-            if (terminal_str.split('\n')[-3] == '0'):
-                if (terminal_str.split('\n')[-4].find('Is a directory') >= 0):
+            # print('[-1]|' + terminal_str.split('\n')[-1] + '|')
+            if (terminal_str.split('\n')[-4] == '0'):
+                if (terminal_str.split('\n')[-5].find('Is a directory') >= 0):
                     os.mkdir(export_dir_name + item + '/')
                     print('build dir')
                 else:
@@ -176,7 +179,7 @@ class Inference:
                     f.close()
                     print('it is empty file')
             else:
-                print(int(terminal_str.split('\n')[-3]))
+                print(int(terminal_str.split('\n')[-4]))
                 my_str = self.single_file_mode(item)
                 self.write_in_file(export_dir_name, item, my_str)
         

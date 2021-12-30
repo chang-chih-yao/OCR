@@ -9,6 +9,8 @@ from PIL import ImageGrab
 import tkinter as tk
 import math
 
+from pyautogui import sleep
+
 from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
@@ -114,7 +116,7 @@ def buttonRelease_1(event):
         print('screen fail')
         sys_out(None)
 
-def my_motion_test(event=None):
+def mouse_motion(event=None):
     global place_x1, place_y1
     if cfg_x1 >= 1920:
         x = 1920 + root.winfo_pointerx() - root.winfo_rootx()
@@ -159,6 +161,10 @@ def right_key(even):
 def sys_out(even):
     root.destroy()
 
+def program_exit(even):
+    root.destroy()
+    exit()
+
 
 def find_contour(img):
     ret, th1 = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY)
@@ -190,7 +196,7 @@ def find_contour(img):
     # cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),3)
     # cv2.imshow("drawContours", img) 
     # cv2.waitKey(0)
-    return w, h
+    return x, y, w, h
 
 def same_dirs(a, b):
     '''Check that structure and files are the same for directories a and b
@@ -210,12 +216,195 @@ def same_dirs(a, b):
         left_subdir = os.path.join(a, subdir)
         right_subdir = os.path.join(b, subdir)
         return same_dirs(left_subdir, right_subdir)
-    return True 
+    return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def screen_button_1(event):
+    global screen_x, screen_y ,screen_xstart,screen_ystart
+    global screen_rec
+    if cfg_x1 >= 1920:
+        screen_x = 1920 + screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    else:
+        screen_x = screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    screen_y = screen_root.winfo_pointery() - screen_root.winfo_rooty()
+    
+    screen_xstart,screen_ystart = event.x, event.y
+    #print("event.x, event.y = ", event.x, event.y)
+    screen_xstart,screen_ystart = event.x, event.y 
+    screen_cv.configure(height=1)
+    screen_cv.configure(width=1)
+    screen_cv.config(highlightthickness=0) # 無邊框
+    screen_cv.place(x=event.x, y=event.y)
+    screen_rec = screen_cv.create_rectangle(0,0,0,0)
+
+def screen_b1_Motion(event):
+    global screen_x, screen_y, screen_xstart, screen_ystart
+    if cfg_x1 >= 1920:
+        screen_x = 1920 + screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    else:
+        screen_x = screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    screen_y = screen_root.winfo_pointery() - screen_root.winfo_rooty()
+    #print("event.x, event.y = ", event.x, event.y)
+    screen_cv.configure(height = event.y - screen_ystart)
+    screen_cv.configure(width = event.x - screen_xstart)
+    screen_cv.coords(screen_rec,0,0,event.x-screen_xstart,event.y-screen_ystart)
+
+def screen_buttonRelease_1(event):
+    global screen_xend,screen_yend
+    if cfg_x1 >= 1920:
+        screen_xend = 1920 + screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    else:
+        screen_xend = screen_root.winfo_pointerx() - screen_root.winfo_rootx()
+    screen_yend = screen_root.winfo_pointery() - screen_root.winfo_rooty()
+
+def save_img(event):
+    global screen_xstart,screen_ystart,screen_xend,screen_yend
+    screen_cv.delete(screen_rec)
+    screen_cv.place_forget()
+    screen_root.attributes("-alpha", 0)
+    #img = pyautogui.screenshot(region=[screen_xstart, screen_ystart, screen_xend-screen_xstart, screen_yend-screen_ystart]) # x,y,w,h
+    img = ImageGrab.grab(bbox=(screen_xstart, screen_ystart, screen_xend, screen_yend), all_screens=True)
+    img.save('block_template.png')
+    print('block_template.png save completely')
+    screen_root.destroy()
+
+def screen_sys_out(even):
+    screen_root.destroy()
+    exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+infer_tmp = Inference(calibration=True)
+infer_tmp.active_nx()
+txt_w = infer_tmp.w
+txt_h = infer_tmp.h
+cfg_x1 = infer_tmp.x1
+cfg_y1 = infer_tmp.y1
+cfg_x2 = infer_tmp.x2
+cfg_y2 = infer_tmp.y2 + txt_h*2
+my_type('cd /rsc/R7227/')
+my_type('enter_key')
+my_type('enter_key')
+my_type('enter_key')
+my_type('     ')
+my_type('enter_key')
+my_type('enter_key')
+my_type('    ')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+screen_root = tk.Tk()
+screen_root.overrideredirect(True)  # 隱藏視窗的標題列
+screen_root.attributes("-alpha", 0.3) # 視窗透明度30%
+screen_root.attributes('-topmost', True)
+if cfg_x1 >= 1920:
+    screen_root.geometry("{0}x{1}+1920+0".format(screen_root.winfo_screenwidth(), screen_root.winfo_screenheight()))
+else:
+    screen_root.geometry("{0}x{1}+0+0".format(screen_root.winfo_screenwidth(), screen_root.winfo_screenheight()))
+screen_root.configure(bg="black")
+
+# 再建立1個Canvas用於圈選
+screen_cv = tk.Canvas(screen_root)
+screen_cv.config(highlightthickness=0) # 無邊框
+screen_x, screen_y = 0, 0
+screen_xstart,screen_ystart = 0 ,0
+screen_xend,screen_yend = 0, 0
+screen_rec = ''
+
+screen_root.bind('<Escape>',screen_sys_out) # 鍵盤Esc鍵->退出
+screen_root.bind("<Button-1>", screen_button_1) # 滑鼠左鍵點選->顯示子視窗 
+screen_root.bind("<B1-Motion>", screen_b1_Motion)# 滑鼠左鍵移動->改變子視窗大小
+screen_root.bind("<ButtonRelease-1>", screen_buttonRelease_1) # 滑鼠左鍵釋放->記錄最後遊標的位置
+screen_root.bind("<Return>",save_img) #滑鼠右鍵點選->截圖並儲存圖片
+screen_root.mainloop()
+
+
+
+
+
+
+
+
+
+
+time.sleep(1)
+
+
+
+
+
 
 
 img = cv2.imread("block_template.png")
 my_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-detect_w, detect_h = find_contour(my_img)
+detect_bias_x, detect_bias_y, detect_w, detect_h = find_contour(my_img)
+print('----------------')
+print(screen_xstart, screen_ystart)
+print(detect_bias_x, detect_bias_y)
+print(detect_w, detect_h)
 modify_cfg('w', detect_w)
 modify_cfg('h', detect_h)
 
@@ -226,12 +415,13 @@ my_config = load_cfg()
 
 my_infer.active_nx()
 
-my_type('cd /rsc/R7227/open/export_file')
+my_type('cd open/export_file')
 my_type('enter_key')
 my_type('vim -u NONE -R calibration.txt')
 my_type('enter_key')
 
-
+my_infer.x1 = (screen_xstart + detect_bias_x) % detect_w
+my_infer.y1 = (screen_ystart + detect_bias_y) % detect_h
 txt_w = my_infer.w
 txt_h = my_infer.h
 cfg_x1 = my_infer.x1
@@ -239,9 +429,41 @@ cfg_y1 = my_infer.y1
 cfg_x2 = my_infer.x2
 cfg_y2 = my_infer.y2 + txt_h*2
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 root = tk.Tk()
 root.overrideredirect(True)         # 隱藏視窗的標題列
-root.attributes("-alpha", 0.4)      # 視窗透明度30%
+root.attributes("-alpha", 0.4)      # 視窗透明度40%
 root.attributes('-topmost', True)
 if cfg_x1 >= 1920:
     root.geometry("{0}x{1}+1920+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
@@ -281,12 +503,13 @@ motion_cv.place(x=0, y=0)
 
 # 繫結事件
 #root.bind("<B1-Motion>", move)   # 滑鼠左鍵移動->顯示當前遊標位置
-root.bind('<Escape>',sys_out)      # 鍵盤Esc鍵->退出
+root.bind('<Escape>',program_exit)      # 鍵盤Esc鍵->退出
+root.bind('<Return>',sys_out)      # 鍵盤Esc鍵->退出
 root.bind("<Button-1>", button_1)  # 滑鼠左鍵點選->顯示子視窗 
 root.bind("<B1-Motion>", b1_Motion)# 滑鼠左鍵移動->改變子視窗大小
 root.bind("<ButtonRelease-1>", buttonRelease_1) # 滑鼠左鍵釋放->記錄最後遊標的位置
 #root.bind("<Button-3>",button_3)   #滑鼠右鍵點選->截圖並儲存圖片
-root.bind("<Motion>", my_motion_test)
+root.bind("<Motion>", mouse_motion)
 root.bind("<Up>", up_key)
 root.bind("<Down>", down_key)
 root.bind("<Left>", left_key)
@@ -295,7 +518,6 @@ root.mainloop()
 
 
 quit_vim()
-
 
 target_name = 'calibration.txt'
 export_file_root = 'export/'
@@ -310,6 +532,7 @@ print('Start\n')
 
 
 open_vim(target_name)
+my_type(':4')
 time.sleep(0.5)
 img = my_infer.screen()
 # cv2.imshow("img", img)
