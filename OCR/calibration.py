@@ -167,10 +167,17 @@ def program_exit(even):
 
 
 def find_contour(img):
-    ret, th1 = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY)
+    img_copy = img.copy()
+    bg_color = img_copy[0, 0]   # assume [0, 0] is bg color
+    for a in range(img_copy.shape[0]):
+        for b in range(img_copy.shape[1]):
+            if img_copy[a, b] == bg_color:
+                img_copy[a, b] = 0
+            else:
+                img_copy[a, b] = 255
     # cv2.imshow("origin", th1) 
-    contours, hierarchy = cv2.findContours(th1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #cv2.drawContours(img,contours,-1,(0,255,255),1) 
+    contours, hierarchy = cv2.findContours(img_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #cv2.drawContours(img_copy,contours,-1,(0,255,255),1) 
     
     cnt = contours[0]
     M = cv2.moments(cnt)
@@ -224,12 +231,8 @@ def my_file_cmp(a, b):
     with open(b, 'r') as f_b:
         b_lines = f_b.readlines()
     
-    print(len(a_lines))
-    print(len(b_lines))
-    if a_lines == b_lines:
-        return True
-    else:
-         return False
+    return a_lines == b_lines
+
 
 
 
@@ -308,34 +311,6 @@ def screen_sys_out(even):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 infer_tmp = Inference(calibration=True)
 infer_tmp.active_nx()
 txt_w = infer_tmp.w
@@ -348,17 +323,11 @@ my_type('cd /rsc/R7227/')
 my_type('enter_key')
 my_type('enter_key')
 my_type('enter_key')
-my_type('    ')
+my_type('       ')
+my_type('enter_key')
+my_type('       ')
 
-time.sleep(3)
-
-
-
-
-
-
-
-
+time.sleep(4)
 
 
 
@@ -390,18 +359,7 @@ screen_root.mainloop()
 
 
 
-
-
-
-
-
-
-
 time.sleep(1)
-
-
-
-
 
 
 
@@ -435,33 +393,6 @@ cfg_x1 = my_infer.x1
 cfg_y1 = my_infer.y1
 cfg_x2 = my_infer.x2
 cfg_y2 = my_infer.y2 + txt_h*2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
