@@ -218,7 +218,18 @@ def same_dirs(a, b):
         return same_dirs(left_subdir, right_subdir)
     return True
 
-
+def my_file_cmp(a, b):
+    with open(a, 'r') as f_a:
+        a_lines = f_a.readlines()
+    with open(b, 'r') as f_b:
+        b_lines = f_b.readlines()
+    
+    print(len(a_lines))
+    print(len(b_lines))
+    if a_lines == b_lines:
+        return True
+    else:
+         return False
 
 
 
@@ -337,13 +348,9 @@ my_type('cd /rsc/R7227/')
 my_type('enter_key')
 my_type('enter_key')
 my_type('enter_key')
-my_type('     ')
-my_type('enter_key')
-my_type('enter_key')
 my_type('    ')
 
-
-
+time.sleep(3)
 
 
 
@@ -573,7 +580,7 @@ os.mkdir(export_dir_name)
 temp_str = my_infer.single_file_mode(target_name)
 my_infer.write_in_file(export_dir_name, target_name, temp_str)
 
-if cmp('compare_file/calibration.txt', export_dir_name + target_name):
+if my_file_cmp('compare_file/calibration.txt', export_dir_name + target_name):
     modify_cfg('x1', my_infer.x1)
     modify_cfg('y1', my_infer.y1)
     modify_cfg('x2', my_infer.x2)
