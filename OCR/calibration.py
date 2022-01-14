@@ -327,7 +327,7 @@ my_type('       ')
 my_type('enter_key')
 my_type('       ')
 
-time.sleep(4)
+time.sleep(5)
 
 
 
@@ -525,7 +525,7 @@ my_type('clear')
 my_type('enter_key')
 my_type('clear')
 my_type('enter_key')
-my_type('python /rsc/R7227/.local/open/bold_gen.py')
+my_type('python bold_gen.py')
 my_type('enter_key')
 img = my_infer.screen(vim_mode=False)
 ret, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
