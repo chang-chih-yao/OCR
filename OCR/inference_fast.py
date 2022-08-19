@@ -195,7 +195,7 @@ if __name__ == '__main__':
             cfg_x1 = my_infer.x1
             cfg_y1 = my_infer.y1
             cfg_x2 = my_infer.x2
-            cfg_y2 = my_infer.y2 + txt_h*2
+            cfg_y2 = my_infer.y2 + txt_h*1
 
             root = tk.Tk()
             root.overrideredirect(True)         # 隱藏視窗的標題列

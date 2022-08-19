@@ -102,24 +102,24 @@ class Inference:
         my_str = self.single_file_mode(file_name)
         self.write_in_file(export_dir_name, 'current_opened_file.txt', my_str)
 
-    def delete_return_line(self, my_str, cmd):
-        split_str = my_str.split('\n')
-        target_line_return = 0
-        for i in range(len(split_str)-1, 0, -1):
-            if split_str[i] != '':
-                target_line_return = i
-                break
-        result = ''
-        for i in range(target_line_return+1):    # 0 ~ target_line_return
-            result += split_str[i]
-            result += '\n'
+    # def delete_return_line(self, my_str, cmd):
+    #     split_str = my_str.split('\n')
+    #     target_line_return = 0
+    #     for i in range(len(split_str)-1, 0, -1):
+    #         if split_str[i] != '':
+    #             target_line_return = i
+    #             break
+    #     result = ''
+    #     for i in range(target_line_return+1):    # 0 ~ target_line_return
+    #         result += split_str[i]
+    #         result += '\n'
         
-        target_line_cmd = 0
-        for i in range(len(split_str)-1, 0, -1):
-            if split_str[i].find(cmd) >=0:
-                target_line_cmd = i
-                break
-        return result, target_line_cmd
+    #     target_line_cmd = 0
+    #     for i in range(len(split_str)-1, 0, -1):
+    #         if split_str[i].find(cmd) >=0:
+    #             target_line_cmd = i
+    #             break
+    #     return result, target_line_cmd
 
     def recursive_vim(self):
         for t in range(50):
@@ -129,10 +129,10 @@ class Inference:
         while True:
             img = self.screen(vim_mode=False)
             terminal_str = self.infer(img, vim_mode=False)[0]
-            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, "~/aaa.tmp")
             # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
             # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
-            if terminal_str.split('\n')[target_line_cmd+1] == '':
+            # print('[-1]|' + terminal_str.split('\n')[-1] + '|')
+            if terminal_str.split('\n')[-2] == '':
                 print('wait aaa.tmp...')
                 time.sleep(1)
             else:
@@ -141,7 +141,6 @@ class Inference:
         #     print('Permission denied !!!')
         #     print('please cp -r this_dir/ to your dir')
         #     exit()
-        
         open_vim('~/aaa.tmp', recursive_mode=True)
         my_type(':%s/\\.\\///g')
         my_type('enter_key')
@@ -172,12 +171,12 @@ class Inference:
             my_type('enter_key')
             img = self.screen(vim_mode=False)
             terminal_str = self.infer(img, vim_mode=False)[0]
-            terminal_str, target_line_cmd = self.delete_return_line(terminal_str, 'wc -l <')
-            # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
-            # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
+            # print(terminal_str)
+            # print('[-3]|' + terminal_str.split('\n')[-3] + '|')   # terminal 2nd to last line
+            # print('[-2]|' + terminal_str.split('\n')[-2] + '|')   # terminal last        line
             # print('[-1]|' + terminal_str.split('\n')[-1] + '|')
-            if (terminal_str.split('\n')[-4] == '0'):
-                if (terminal_str.split('\n')[-5].find('Is a directory') >= 0):
+            if (terminal_str.split('\n')[-2] == '0'):
+                if (terminal_str.split('\n')[-3].find('Is a directory') >= 0):
                     os.mkdir(export_dir_name + item + '/')
                     print('build dir')
                 else:
@@ -185,7 +184,7 @@ class Inference:
                     f.close()
                     print('it is empty file')
             else:
-                print(int(terminal_str.split('\n')[-4]))
+                # print((terminal_str.split('\n')[-2]))
                 my_str = self.single_file_mode(item)
                 self.write_in_file(export_dir_name, item, my_str)
         
@@ -214,7 +213,7 @@ class Inference:
         if threshold is None:
             threshold = self.threshold
         if vim_mode == False:
-            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 2*self.h), all_screens=True)
+            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 1*self.h), all_screens=True)
         else:
             img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
         img_np = np.array(img)
@@ -227,7 +226,7 @@ class Inference:
         if vertical_num is None:
             vertical_num = self.vertical_num
             if vim_mode==False:
-                vertical_num += 2
+                vertical_num += 1
         if horizontal_num is None:
             horizontal_num = self.horizontal_num
         temp_s = ''
