@@ -86,13 +86,21 @@ def check_win_clip(my_str=''):
     
 
 def background_screenshot(hwnd, width, height):
-    wDC = win32gui.GetWindowDC(hwnd)
-    dcObj=win32ui.CreateDCFromHandle(wDC)
-    cDC=dcObj.CreateCompatibleDC()
+    # wDC = win32gui.GetDC(hwnd)         # GetDC 仅为客户区
+    wDC   = win32gui.GetWindowDC(hwnd)     # GetWindowDC 函式會擷取整個視窗的 DC 裝置 (內容，包括標題列、功能表和捲軸。視窗裝置內容允許在視窗的任何位置繪製，因為裝置內容的原點是視窗左上角，而不是工作區。
+    dcObj = win32ui.CreateDCFromHandle(wDC)
+    cDC   = dcObj.CreateCompatibleDC()
+    
     dataBitMap = win32ui.CreateBitmap()
-    dataBitMap.CreateCompatibleBitmap(dcObj, width, height)
+    dataBitMap.CreateCompatibleBitmap(dcObj, width, height)     # # 为bitmap开辟適當空间
+    # dataBitMap.CreateCompatibleBitmap(mfcDC, w, h)的理解：
+    # 1.mfc相当于一个虚拟屏幕。这里的参数w和h决定了这个屏幕的大小。
+    # 2.屏幕的初始状态是黑色，每个坐标都是#000000
+    # 3.之前有 dcObj = win32ui.CreateDCFromHandle(wDC)，又有 wDC = win32gui.GetWindowDC(hwnd)
+    #   dcObj和hwnd窗口之间建立了某种关联，可以将hwnd窗口中的图像放到虚拟屏幕上
+
     cDC.SelectObject(dataBitMap)
-    cDC.BitBlt((0,0),(width, height) , dcObj, (7,50), win32con.SRCCOPY)
+    cDC.BitBlt((0,0),(width, height) , dcObj, (0,0), win32con.SRCCOPY)
     print(dataBitMap.GetInfo())
     img = np.array(dataBitMap.GetBitmapBits(), dtype=np.uint8)
     img = np.reshape(img, (height, width, 4))
@@ -107,7 +115,8 @@ def background_screenshot(hwnd, width, height):
     win32gui.ReleaseDC(hwnd, wDC)
     win32gui.DeleteObject(dataBitMap.GetHandle())
 
-    frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    frame = img
     return frame
 
 def active_window_title():
@@ -158,8 +167,10 @@ if __name__ == '__main__':
     #time.sleep(1)
     hwnd = get_windows_handle('NoMachine')
     rect = win32gui.GetWindowRect(hwnd)
-    w_offset = 7
-    h_offset = 57
+    #w_offset = 7
+    #h_offset = 57
+    w_offset = 0
+    h_offset = 0
     #win32gui.EnumChildWindows(hwnd, winfun, None)
 
     #send_input_text(197734, 'test\nfsdff\n')
