@@ -33,8 +33,8 @@ def main():
     #hwnd = win32gui.FindWindow(None, window_name)
     hwnd = get_windows_handle('NoMachine')
     #active_window(hwnd)
-    hwnd = get_inner_windows(hwnd)['QWidget']
-    win = win32ui.CreateWindowFromHandle(hwnd)
+    child_hwnd = get_inner_windows(hwnd)['QWidget']
+    win = win32ui.CreateWindowFromHandle(child_hwnd)
 
     win.SendMessage(win32con.WM_CHAR, ord('A'), 0)
     sleep(0.5)
@@ -44,12 +44,12 @@ def main():
     #win.SendMessage(win32con.WM_KEYUP, 0x1E, 0)
     for i in range(20):
         # key codes : https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-        win32api.SendMessage(hwnd, win32con.WM_KEYDOWN, 0x41, 0)
+        win32api.SendMessage(child_hwnd, win32con.WM_KEYDOWN, 0x41, 0)
         sleep(0.1)
-        win32api.SendMessage(hwnd, win32con.WM_KEYUP, 0x41, 0)
-        win32api.SendMessage(hwnd, win32con.WM_KEYDOWN, 0x42, 0)
+        win32api.SendMessage(child_hwnd, win32con.WM_KEYUP, 0x41, 0)
+        win32api.SendMessage(child_hwnd, win32con.WM_KEYDOWN, 0x42, 0)
         sleep(0.1)
-        win32api.SendMessage(hwnd, win32con.WM_KEYUP, 0x42, 0)
+        win32api.SendMessage(child_hwnd, win32con.WM_KEYUP, 0x42, 0)
         
     # send mouse click : https://stackoverflow.com/questions/59285854/is-there-a-way-to-send-a-click-event-to-a-window-in-the-background-in-python
 
