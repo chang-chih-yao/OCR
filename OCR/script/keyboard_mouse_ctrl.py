@@ -5,6 +5,7 @@ from pynput import keyboard
 import time
 from script.cfg import load_cfg
 from script.windows_api import win_clip
+import win32gui, win32ui, win32con, win32api
 
 
 def on_press(key):
@@ -17,7 +18,7 @@ def on_press(key):
         exit_flag = 1
         return False
 
-def my_type(my_str = ''):
+def my_type(my_str = '', nodelay=False):
     '''
     my_str : string
     '''
@@ -29,13 +30,18 @@ def my_type(my_str = ''):
         if (my_str == ' '):
             my_keyboard.type(' ')
             time.sleep(type_speed)
+            # win32api.SendMessage(FrameArea_hwnd, win32con.WM_KEYDOWN, 0x20, 0)
+            # time.sleep(0.01)
+            # win32api.SendMessage(FrameArea_hwnd, win32con.WM_KEYUP, 0x20, 0)
+            # time.sleep(0.01)
             return
         elif (my_str == 'pagedown_key'):
             my_keyboard.press(Key.ctrl)
             my_keyboard.press('f')
             my_keyboard.release('f')
             my_keyboard.release(Key.ctrl)
-            time.sleep(cmd_speed)
+            if nodelay == False:
+                time.sleep(cmd_speed)
             return
         elif (my_str == 'enter_key'):
             my_keyboard.press(Key.enter)
@@ -105,8 +111,8 @@ def open_vim(my_str='', recursive_mode=False):
         # win_clip(cmd)
         # my_type('paste')
         my_type(cmd)
-        
         my_type('enter_key')
+        
         my_type(':set nu')
         my_type('enter_key')
         # my_type(':1')
@@ -142,5 +148,5 @@ my_mouse = pynput.mouse.Controller()
 
 exit_flag = 0
 detect_exit_flag = 1
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
+# listener = keyboard.Listener(on_press=on_press)
+# listener.start()

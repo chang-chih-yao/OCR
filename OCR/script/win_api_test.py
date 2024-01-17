@@ -39,6 +39,7 @@ def main():
     win.SendMessage(win32con.WM_CHAR, ord('A'), 0)
     sleep(0.5)
     win.SendMessage(win32con.WM_CHAR, ord('B'), 0)
+    print('--------------------------------------------')
     #win.SendMessage(win32con.WM_KEYDOWN, 0x1E, 0)
     #sleep(0.5)
     #win.SendMessage(win32con.WM_KEYUP, 0x1E, 0)

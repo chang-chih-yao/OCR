@@ -5,17 +5,30 @@ from PIL import ImageGrab
 import sys
 import os
 import matplotlib.pyplot as plt
+import base64
+import lzma
+import tarfile
+import io
+import shutil
+# from multiprocessing import Array, Value
+from threading import Thread, Lock
 
 from script.gen_dataset_fast import gen_data
 from script.gen_training_data_fast import gen_train
 from script.load_model import load_model
 from script.cfg import build_cfg, load_cfg, modify_cfg
 from script.windows_api import detect_nx, message_box, active_window, win_clip, get_windows_location
-from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
+from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim, get_exit_flag
 
 class Inference:
     def __init__(self, calibration=False):
         self.set_up(calibration)
+        self.img_lock = Lock()
+        self.img_is_new = False
+        self.thread_img = ''
+
+    def reset_var(self):
+        self.img_is_new = False
 
     def set_up(self, calibration):
         # --------------------------- detect nx ------------------------ #
@@ -50,8 +63,12 @@ class Inference:
             self.data_set_num = ''
             self.category = ''
             self.img_arr = ''
+            self.char_list_binary = ''
+            self.data_set_num_binary = ''
+            self.category_binary = ''
+            self.img_arr_binary = ''
         else:
-            self.char_list, self.data_set_num, self.category, self.img_arr = load_model(w=self.w, h=self.h)
+            self.load_model()
 
         # 1080p monitor size
         if calibration:
@@ -78,6 +95,12 @@ class Inference:
         self.log_flag = 0                    # flag : log on -> log_flag = 1
         self.log_cou = 0
 
+    def set_bg_class(self, bg):
+        self.bg = bg
+
+    def load_model(self):
+        self.char_list, self.data_set_num, self.category, self.img_arr, self.char_list_binary, self.data_set_num_binary, self.category_binary, self.img_arr_binary = load_model(w=self.w, h=self.h)
+
     def vertical_and_horizontal_num_update(self):
         self.vertical_num = (self.y2 - self.y1) // self.h
         self.horizontal_num = (self.x2 - self.x1) // self.w
@@ -91,14 +114,14 @@ class Inference:
         mouse_click(int((tmp_rect[0] + tmp_rect[2])/2), int((tmp_rect[1] + tmp_rect[3])/2))
 
     def current_opened_file(self, export_dir_name):
-        my_type('esc_key')
-        my_type('esc_key')
-        my_type(":echo expand('%:p')")
-        my_type('enter_key')
+        self.bg.nx_bg_type('esc_key')
+        self.bg.nx_bg_type('esc_key')
+        self.bg.nx_bg_type(":echo expand('%:p')")
+        self.bg.nx_bg_type('enter_key')
         img = self.screen(vim_mode=False)
         terminal_str = self.infer(img, vim_mode=False)[0]
         file_name = terminal_str.split('\n')[-2]
-        my_type('new_tab')
+        self.bg.nx_bg_type('new_tab')
         my_str = self.single_file_mode(file_name)
         self.write_in_file(export_dir_name, 'current_opened_file.txt', my_str)
 
@@ -191,33 +214,389 @@ class Inference:
         print('recursive DONE')
 
     def single_file_mode(self, name):
-        open_vim(name)
+        self.bg.nx_bg_open_vim(name)
         file_eof = 0
         line_cou = 1
         my_str = ''
         while(file_eof == 0):
+            if get_exit_flag() == 1:
+                break
             img = self.screen()
             temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
             my_str += temp_str
-            my_type('pagedown_key')
+            self.bg.nx_bg_type('pagedown_key')
 
-        quit_vim()
+        self.bg.nx_bg_quit_vim()
         return my_str
+
+    def mp_screen_binary(self):
+        old_str = ''
+        new_str = ''
+        idx = 0
+        while(True):
+            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
+            img_np = np.array(img)
+            frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            new_str = ''
+            for i in range(7):
+                crop_img = frame[0:self.h, i*self.w:(i+1)*self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr_binary - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum)
+                new_str += self.char_list_binary[result_idx]
+            print(new_str)
+            if new_str != old_str:
+                crop_img = frame[self.h:self.h*2, 0:self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr_binary - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum)
+                if self.char_list_binary[result_idx] == '~':
+                    print('end')
+                    break
+                else:
+                    old_str = new_str
+                    print('send frame to shared_memory')
+                    cv2.imwrite(f'{idx}.png', frame)
+                    idx += 1
+                    self.bg.nx_bg_type('pagedown_key', nodelay=True)
+        # cv2.imwrite(f'test.png', crop_img)
+
+    def fast_screen(self):
+        old_str = ''
+        new_str = ''
+        # idx = 0
+        while(True):
+            if get_exit_flag() == 1:
+                break
+            # img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
+            # img_np = np.array(img)
+            # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            frame = self.screen(vim_mode=True)
+            new_str = ''
+            for i in range(7):
+                crop_img = frame[0:self.h, i*self.w:(i+1)*self.w]  # 第1行前面7個char
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr_binary - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum)
+                new_str += self.char_list_binary[result_idx]
+            # print(new_str)
+            if new_str != old_str:
+                crop_img = frame[self.h:self.h*2, 0:self.w]        # 第2行的第1個char
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr_binary - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum)
+
+                if self.char_list_binary[result_idx] == '~':       # 第2行的第1個char
+                    if int(new_str) == 1:                          # 代表該文件只有一行
+                        while True:
+                            if not self.img_is_new:
+                                self.img_lock.acquire()
+                                self.thread_img = frame
+                                self.img_is_new = True
+                                self.img_lock.release()
+                                break
+                            else:
+                                # print('wait detect img')
+                                time.sleep(0.1)
+                    # print('end')
+                    break
+                else:
+                    old_str = new_str
+                    # print('ready to send frame to shared_memory')
+                    while True:
+                        if get_exit_flag() == 1:
+                            break
+                        if not self.img_is_new:
+                            self.img_lock.acquire()
+                            self.thread_img = frame
+                            self.img_is_new = True
+                            self.img_lock.release()
+                            break
+                        else:
+                            # print('wait detect img')
+                            time.sleep(0.1)
+                    # cv2.imwrite(f'{idx}.png', frame)
+                    # idx += 1
+                    self.bg.nx_bg_type('pagedown_key', nodelay=True)
+                    time.sleep(0.1)
+            else:
+                print('still same')
+                time.sleep(0.1)
+
+    def single_file_mode_binary(self, input_file, export_dir_name, output_file):
+        self.reset_var()
+        # shared_array = Array('I', original_array.flatten(), lock=False)
+
+        # cmd = f'xxd -c 90 -p {input_file} > {input_file}.ttt'
+        # cmd = f'xz -k -5 {input_file}'
+        # my_type(cmd)
+        # my_type('enter_key')
+
+        # cmd = f'python to_binary.py 180 {input_file} {input_file}.ttt'
+        # cmd = f'/rsc/R7227/.local/open/file_dump 180 {input_file} {input_file}.ttt'
+        cmd = f'/rsc/R7227/.local/open/file_dump -f 180 {input_file}'
+        self.bg.nx_bg_type(cmd)
+        self.bg.nx_bg_type('enter_key')
+        # idx = 0
+        while True:
+            img = self.screen(vim_mode=False)
+            # print(img.shape)
+            str_0 = ''
+            str_1 = ''
+            for i in range(13):
+                crop_img = img[img.shape[0] - self.h*2 : img.shape[0] - self.h, i*self.w:(i+1)*self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum) // self.data_set_num
+                str_0 += self.char_list[result_idx]
+
+                
+                crop_img = img[img.shape[0] - self.h : img.shape[0], i*self.w:(i+1)*self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum) // self.data_set_num
+                str_1 += self.char_list[result_idx]
+            
+            # print('|' + str_0 + '|')
+            # print('|' + str_1 + '|')
+            if str_1 == ' '*13:
+                print('wait file_dump cmd...')
+                time.sleep(1)
+            elif str_0 == 'No such file:':
+                print(f'找不到輸入的檔案:"{input_file}"')
+                return
+            else:
+                break
+
+            # cv2.imwrite(f'check_{idx}.png', crop_img)
+            # idx += 1
+            # terminal_str = self.infer(img, vim_mode=False)[0]
+            # print('[-3]|' + terminal_str.split('\n')[-3] + '|')
+            # print('[-2]|' + terminal_str.split('\n')[-2] + '|')
+            # print('[-1]|' + terminal_str.split('\n')[-1] + '|')
+            # if terminal_str.split('\n')[-2] == '':
+            #     print('wait file_dump cmd...')
+            #     time.sleep(1)
+            # else:
+            #     break
+        
+        # open_vim(f'{input_file}.ttt')
+        self.bg.nx_bg_type(':set nu')
+        self.bg.nx_bg_type('enter_key')
+
+        t = Thread(target=self.fast_screen, daemon=True)
+        t.start()
+
+        file_eof = 0
+        line_cou = 1
+        my_str = ''
+        while file_eof == 0:
+            # start_time = time.perf_counter()
+            # img = self.screen()
+            if get_exit_flag() == 1:
+                break
+            if self.img_is_new:
+                self.img_lock.acquire()
+                img = self.thread_img.copy()
+                self.img_is_new = False
+                self.img_lock.release()
+                # print(img.shape)
+                # cv2.imwrite(f'target.png', img)
+                temp_str, file_eof, line_cou = self.infer_binary(img, file_eof=file_eof, line_cou=line_cou)
+                # temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
+                my_str += temp_str
+                # print(f'cost time:{time.perf_counter() - start_time}')
+                # my_type('pagedown_key')
+            else:
+                print('wait new img')
+                time.sleep(0.1)
+
+        self.bg.nx_bg_quit_vim()
+        # my_type(f'rm -f {input_file}.ttt')
+        # my_type('enter_key')
+
+        # print(my_str)
+
+        binary_data_base64 = base64.b64decode(my_str.strip())
+        # print(binary_data_base64)
+        if binary_data_base64 != b'':
+            # method 1: 不寫檔, 直接用byte string傳遞, 解壓縮
+            binary_data = lzma.decompress(binary_data_base64)
+            # print(binary_data)
+            with open(export_dir_name + output_file, 'wb') as f_out:
+                f_out.write(binary_data)
+
+            # method 2: 寫檔 讀檔 解壓縮
+            # with open(export_dir_name + 'temp_base64.xz', 'wb') as f:
+            #     f.write(binary_data_base64)
+
+            # with lzma.open(export_dir_name + 'temp_base64.xz', 'rb') as f_in, open(export_dir_name + output_file, 'wb') as f_out:
+            #     shutil.copyfileobj(f_in, f_out)
+            
+            # os.remove(export_dir_name + 'temp_base64.xz')
+        else:
+            with open(export_dir_name + output_file, 'w') as f_out:
+                f_out.write('')
+
+        t.join()
+
+        return binary_data_base64
+
+    def folder_mode_binary(self, input_file, export_dir_name):
+        self.reset_var()
+        cmd = f'/rsc/R7227/.local/open/file_dump -d 180 {input_file}'
+        self.bg.nx_bg_type(cmd)
+        self.bg.nx_bg_type('enter_key')
+        # idx = 0
+        while True:
+            img = self.screen(vim_mode=False)
+            # print(img.shape)
+            str_0 = ''
+            str_1 = ''
+            for i in range(13):
+                crop_img = img[img.shape[0] - self.h*2 : img.shape[0] - self.h, i*self.w:(i+1)*self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum) // self.data_set_num
+                str_0 += self.char_list[result_idx]
+
+                
+                crop_img = img[img.shape[0] - self.h : img.shape[0], i*self.w:(i+1)*self.w]
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+
+                mid = (crop_img.flatten() / 255).astype('uint8')
+                result_arr = np.abs(self.img_arr - mid)
+                result_sum = np.sum(result_arr, axis=1)
+                result_idx = np.argmin(result_sum) // self.data_set_num
+                str_1 += self.char_list[result_idx]
+            
+            # print('|' + str_0 + '|')
+            # print('|' + str_1 + '|')
+            if str_1 == ' '*13:
+                print('wait file_dump cmd...')
+                time.sleep(1)
+            elif str_0 == 'No such file:':
+                print(f'找不到輸入的檔案:"{input_file}"')
+                return
+            else:
+                break
+        
+        self.bg.nx_bg_type(':set nu')
+        self.bg.nx_bg_type('enter_key')
+
+        t = Thread(target=self.fast_screen, daemon=True)
+        t.start()
+
+        file_eof = 0
+        line_cou = 1
+        my_str = ''
+        while file_eof == 0:
+            # start_time = time.perf_counter()
+            # img = self.screen()
+            if get_exit_flag() == 1:
+                break
+            if self.img_is_new:
+                self.img_lock.acquire()
+                img = self.thread_img.copy()
+                self.img_is_new = False
+                self.img_lock.release()
+                # print(img.shape)
+                # cv2.imwrite(f'target.png', img)
+                temp_str, file_eof, line_cou = self.infer_binary(img, file_eof=file_eof, line_cou=line_cou)
+                # temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
+                my_str += temp_str
+                # print(f'cost time:{time.perf_counter() - start_time}')
+                # my_type('pagedown_key')
+            else:
+                print('wait new img')
+                time.sleep(0.1)
+
+        self.bg.nx_bg_quit_vim()
+
+        # print(my_str)
+
+        binary_data_base64 = base64.b64decode(my_str.strip())
+        # print(binary_data_base64)
+        if binary_data_base64 != b'':
+            # with open(export_dir_name + 'temp_base64.tar.xz', 'wb') as f:
+            #     f.write(binary_data_base64)
+            # with tarfile.open(export_dir_name + 'temp_base64.tar.xz', mode='r:xz') as file:
+            #     file.extractall(path=export_dir_name)
+
+            file_like_object = io.BytesIO(binary_data_base64)
+            with tarfile.open(fileobj=file_like_object, mode='r:xz') as file:
+                file.extractall(path=export_dir_name)
+
+        else:
+            print('empty')
+            # with open(export_dir_name + output_file, 'w') as f_out:
+            #     f_out.write('')
+
+        t.join()
+
+        return binary_data_base64
+
 
     def write_in_file(self, export_dir_name, file_name, my_str=''):
         f = open(export_dir_name + file_name, 'w')
         f.write(my_str)
         f.close()
     
+    def write_in_file_binary(self, export_dir_name, file_name, binary_data=b''):
+        f = open(export_dir_name + file_name, 'wb')
+        f.write(binary_data)
+        f.close()
+    
     def screen(self, threshold=None, vim_mode=True):
-        if threshold is None:
-            threshold = self.threshold
+        # if threshold is None:
+        #     threshold = self.threshold
+        # start_time = time.perf_counter()
         if vim_mode == False:
-            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 1*self.h), all_screens=True)
+            frame = self.bg.nx_bg_screen(self.x1, self.y1, self.x2, self.y2 + 1*self.h)
+            
+            # img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2 + 1*self.h), all_screens=True)
+            # img_np = np.array(img)
+            # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            # cv2.imshow('1', frame_)
+            # cv2.waitKey(0)
+            # cv2.imshow('2', frame)
+            # cv2.waitKey(0)
         else:
-            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
-        img_np = np.array(img)
-        frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            frame = self.bg.nx_bg_screen(self.x1, self.y1, self.x2, self.y2)
+            # img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
+        # img_np = np.array(img)
+        # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+
+        # print(f'screen time:{time.perf_counter() - start_time}')
         #ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         return frame
 
@@ -274,7 +653,7 @@ class Inference:
                         self.log_cou += 1
                     # cv2.imshow('mid', mid)
                     # cv2.waitKey()
-                    mid = (mid/255).astype('int8')
+                    mid = (mid/255).astype('uint8')
                     mid = mid.flatten()
                     result_arr = np.absolute(self.img_arr - mid)
                     result_sum = np.sum(result_arr, axis=1)                                      # (data_set_num*category,)   int32
@@ -346,3 +725,124 @@ class Inference:
             sys.stdout.flush()
         print('\n', end='')
         return temp_s, file_eof, line_cou
+
+
+
+    def infer_binary(self, input_img, vertical_num=None, horizontal_num=None, file_eof=0, line_cou=1, vim_mode=True, draw_plot=False):
+        #global log_cou, wait_correct_num
+        if vertical_num is None:
+            vertical_num = self.vertical_num
+            if vim_mode==False:
+                vertical_num += 1
+        if horizontal_num is None:
+            horizontal_num = self.horizontal_num
+        temp_s = ''
+        x_start = self.w*0
+        y_start = self.h*0
+
+        y = y_start
+        space_cou = 0
+
+        if draw_plot:
+            char_np_arr = np.array(list(self.char_list_binary))
+            temp_y_arr = np.random.randint(100, size=(20))
+            plt.ion()
+            fig = plt.figure()
+            fig.set_size_inches(14, 8)
+            ax = fig.add_subplot()
+            line1, = ax.plot(char_np_arr, temp_y_arr)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+
+        for i in range(vertical_num):
+            x = x_start
+            front_str = ''
+            for j in range(horizontal_num):
+                crop_img = input_img[y:y+self.h, x:x+self.w]
+                
+                if crop_img.shape[0] != self.h or crop_img.shape[1] != self.w:
+                    return temp_s, file_eof, line_cou
+                
+                
+                ################## detect background color ##################
+                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
+                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
+                ################## detect background color ##################
+                mid = (crop_img.flatten() / 255).astype('uint8')
+
+                # mid = crop_img.copy()
+                # if self.log_flag:
+                #     cv2.imwrite('log/{:04d}.png'.format(self.log_cou), mid)
+                #     self.log_cou += 1
+                # # cv2.imshow('mid', mid)
+                # # cv2.waitKey()
+                # mid = (mid/255).astype('uint8')
+                # mid = mid.flatten()
+                result_arr = np.absolute(self.img_arr_binary - mid)
+                result_sum = np.sum(result_arr, axis=1)                                      # (data_set_num_binary*category_binary,)   int32
+                result = np.argmin(result_sum)
+                if draw_plot:
+                    #line1.set_ydata(result_sum[::2])  # if data_set_num_binary == 2
+                    line1.set_ydata(result_sum)        # if data_set_num_binary == 1
+                    fig.canvas.draw()
+                    time.sleep(1)
+                    fig.canvas.flush_events()
+
+                # print(result, self.char_list_binary[result])
+                if j < self.vim_text_bias_width and vim_mode:
+                    front_str += self.char_list_binary[result]
+                    if j == 7:
+                        # print('|'+front_str+'|')
+                        if front_str.replace(' ', '').isdigit():
+                            # print(line_cou)
+                            if front_str == '{:>7d} '.format(line_cou):
+                                space_cou = 0
+                                if self.wait_correct_num == 1:
+                                    self.wait_correct_num = 0
+                                if line_cou != 1:
+                                    temp_s += '\n'
+                            else:
+                                self.wait_correct_num = 1
+                                line_cou -= 1
+                                # print('skip this line')
+                                break
+                        elif front_str == '~       ':
+                            print('\n', end='')
+                            print('file end')
+                            file_eof = 1
+                            return temp_s, file_eof, line_cou
+                        # else:
+                        #     print('gg')
+                        #     line_cou -= 1
+                        #     if self.wait_correct_num == 1:
+                        #         break
+                        #     # print('more than 1 line')
+                        #     if space_cou == 0:
+                        #         temp_s += front_str
+                        #     else:
+                        #         for t in range(space_cou):
+                        #             temp_s += ' '
+                        #         temp_s += front_str
+                        #         space_cou = 0
+                else:
+                    if(self.char_list_binary[result] == ' '):
+                        space_cou += 1
+                    else:
+                        if(space_cou == 0):
+                            temp_s += self.char_list_binary[result]
+                        else:
+                            for t in range(space_cou):
+                                temp_s += ' '
+                            temp_s += self.char_list_binary[result]
+                            space_cou = 0
+                x += self.w
+            y += self.h
+            line_cou += 1
+            if not vim_mode:
+                space_cou = 0
+                temp_s += '\n'
+            print('\r[{:>5d}/{:<5d}]'.format(i+1, vertical_num), end='')
+            sys.stdout.flush()
+        print('\n', end='')
+        return temp_s, file_eof, line_cou
+

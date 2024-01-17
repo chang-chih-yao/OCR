@@ -180,7 +180,10 @@ if __name__ == '__main__':
     print(time.time()-start_time)
     img2 = screen(0, 0, rect[2]-rect[0]-w_offset, rect[3]-rect[1]-h_offset)
     print(time.time()-start_time)
-    cv2.imshow("img1", img1)
+    winname = "Test"
+    cv2.namedWindow(winname)        # Create a named window
+    cv2.moveWindow(winname, 40,30)  # Move it to (40,30)
+    cv2.imshow(winname, img1)
     # cv2.imshow("img2", img2)
     cv2.waitKey()
     # print(img1.shape)

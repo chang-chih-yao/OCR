@@ -9,11 +9,13 @@ import tkinter as tk
 import math
 import numpy as np
 import cv2
+import base64
 
 from script.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag
 from script.windows_api import message_box, win_clip
 from script.inference_core import Inference
 from script.cfg import load_cfg
+from script.background_utility import BG
 
 def button_1(event):
     global x, y ,xstart, ystart, place_x1, place_y1, block_w, block_h
@@ -151,17 +153,31 @@ if __name__ == '__main__':
     detect_stop_program_close()
 
     while True:
-        print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.current opened file  5.screen  6.exit')
+        print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.current opened file  5.screen  6.exit  7. single file mode binary  8. folder binary')
         choice = input()
-        if choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5' and choice != '6':
-            print('please input 1 or 2 or 3 or 4 or 5 or 6')
+        if choice not in ['1', '2', '3', '4', '5', '6', '7', '8']:
+            print('please input 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8')
             continue
         
         if choice == '6':
             break
-        elif choice == '1':
+        elif choice == '1' or choice == '7':
             print('please input file name :')
-            target_name = input()
+            try:
+                target_name = input()
+            except:
+                continue
+            if target_name == '':
+                print('ERROR! empty file name')
+                continue
+        elif choice == '8':
+            print('please input file name :')
+            try:
+                target_name = input()
+            except:
+                continue
+            if target_name == '':
+                target_name = 'archive.tar.xz'
 
         if choice != '5':
             now = datetime.now()
@@ -170,11 +186,31 @@ if __name__ == '__main__':
             print('create folder : ' + export_dir_name)
 
         detect_stop_program_open()
-        my_infer.active_nx()
+        if choice == '3' or choice == '5':
+            my_infer.active_nx()
+
+        bg = BG()
+        # print(bg.list_all_visible_windows())
+        if bg.find_nx_hwnd():
+            my_infer.set_bg_class(bg=bg)
+            # print(bg.FrameArea_hwnd)
+        else:
+            # print('not found nx hwnd')
+            continue
 
         if choice == '1':
             temp_str = my_infer.single_file_mode(target_name)
             my_infer.write_in_file(export_dir_name, target_name, temp_str)
+        elif choice == '7':
+            # my_infer.mp_screen_binary()
+            binary_data = my_infer.single_file_mode_binary(target_name, export_dir_name, target_name)
+            # my_infer.write_in_file_binary(export_dir_name, target_name, binary_data)
+            # binary_data = base64.b64decode(temp_str)
+            # my_infer.write_in_file_binary(export_dir_name, target_name, binary_data)
+            # with open(output_file_path, 'wb') as outfile:
+            #     outfile.write(binary_data)
+        elif choice == '8':
+            binary_data = my_infer.folder_mode_binary(target_name, export_dir_name)
         elif choice == '2':
             my_infer.recursive_mode(export_dir_name)
         elif choice == '3':
