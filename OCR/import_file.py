@@ -1,6 +1,6 @@
 from win32api import ExitWindowsEx
-from script.keyboard_mouse_ctrl import my_type, mouse_click, mouse_click_mid
-from script.windows_api import detect_nx, active_window, win_clip, check_win_clip
+from scripts.keyboard_mouse_ctrl import my_type, mouse_click, mouse_click_mid
+from scripts.windows_api import detect_nx, active_window, win_clip, check_win_clip
 
 import os
 import time

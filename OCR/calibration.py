@@ -11,13 +11,13 @@ import math
 
 from pyautogui import sleep
 
-from script.gen_dataset_fast import gen_data
-from script.gen_training_data_fast import gen_train
-from script.load_model import load_model
-from script.cfg import build_cfg, load_cfg, modify_cfg
-from script.windows_api import message_box, win_clip
-from script.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
-from script.inference_core import Inference
+from scripts.gen_dataset_fast import gen_data
+from scripts.gen_training_data_fast import gen_train
+from scripts.load_model import load_model
+from scripts.cfg import build_cfg, load_cfg, modify_cfg
+from scripts.windows_api import message_box, win_clip
+from scripts.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
+from scripts.inference_core import Inference
 
 def button_1(event):
     global x, y ,xstart, ystart, place_x1, place_y1, block_w, block_h

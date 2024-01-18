@@ -20,11 +20,11 @@ from Crypto.Cipher import AES
 from base64 import b64encode, b64decode
 from threading import Thread
 
-from script.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag
-from script.windows_api import message_box, win_clip
-from script.inference_core import Inference
-from script.cfg import load_cfg
-from script.background_utility import BG
+from scripts.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag
+from scripts.windows_api import message_box, win_clip
+from scripts.inference_core import Inference
+from scripts.cfg import load_cfg
+from scripts.background_utility import BG
 
 VERSION = '1.0.0'
 

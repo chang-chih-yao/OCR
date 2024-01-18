@@ -3,8 +3,8 @@ from pynput.keyboard import Key
 from pynput.mouse import Button
 from pynput import keyboard
 import time
-from script.cfg import load_cfg
-from script.windows_api import win_clip
+from scripts.cfg import load_cfg
+from scripts.windows_api import win_clip
 import win32gui, win32ui, win32con, win32api
 
 
