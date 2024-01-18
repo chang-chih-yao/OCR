@@ -17,6 +17,13 @@ OCR/training_data_fast/
 OCR/export/*
 !OCR/export/README.md
 
+OCR/test_folder/*
+OCR/test_folder_2/*
+
+OCR/dist/*
+OCR/build_required_files/*
+OCR/release/*
+
 # log
 OCR/log/*
 !OCR/log/README.md
