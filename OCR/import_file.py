@@ -8,7 +8,7 @@ import sys
 hwnd, is_nx_active, another_monitor = detect_nx()
 if is_nx_active == False:
     print('not found NoMachine')
-    exit()
+    sys.exit()
 
 active_window(hwnd)
 

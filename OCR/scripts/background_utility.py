@@ -2,6 +2,7 @@ import win32gui, win32ui, win32con, win32api
 import time
 import cv2
 import numpy as np
+import sys
 from .keyboard_mouse_ctrl import get_exit_flag, type_speed, cmd_speed
 
 class BG:
@@ -201,7 +202,7 @@ class BG:
     def nx_bg_type(self, my_str='', nodelay=False):
         if my_str != '':
             if get_exit_flag() == 1:
-                exit()
+                sys.exit()
             if (my_str == ' '):
                 # my_keyboard.type(' ')
                 win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, self.virtual_key[self.no_shift_char.index(' ')], 0)
@@ -279,7 +280,7 @@ class BG:
             
             for i in range(len(my_str)):
                 if get_exit_flag() == 1:
-                    exit()
+                    sys.exit()
                 if my_str[i] in self.shift_char:
                     # my_keyboard.press(Key.shift)
                     win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, 0x10, 0)   # SHIFT
@@ -334,7 +335,7 @@ if __name__ == '__main__':
         print(bg.FrameArea_hwnd)
     else:
         print('not found nx hwnd')
-        exit()
+        sys.exit()
     # print(win_hwnd)
     # win_hwnd = 0x5A17F8
     # win_hwnd = 0xE70682

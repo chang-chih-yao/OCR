@@ -3,6 +3,7 @@ from pynput.keyboard import Key
 from pynput.mouse import Button
 from pynput import keyboard
 import time
+import sys
 from scripts.cfg import load_cfg
 from scripts.windows_api import win_clip
 import win32gui, win32ui, win32con, win32api
@@ -26,7 +27,7 @@ def my_type(my_str = '', nodelay=False):
     shift_char    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'       # 47 chars
     if(my_str != ''):
         if exit_flag == 1:
-            exit()
+            sys.exit()
         if (my_str == ' '):
             my_keyboard.type(' ')
             time.sleep(type_speed)
@@ -80,7 +81,7 @@ def my_type(my_str = '', nodelay=False):
         
         for i in range(len(my_str)):
             if exit_flag == 1:
-                exit()
+                sys.exit()
             if my_str[i] in shift_char:
                 my_keyboard.press(Key.shift)
                 my_keyboard.type(no_shift_char[shift_char.find(my_str[i])])

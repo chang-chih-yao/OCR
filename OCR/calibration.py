@@ -160,7 +160,7 @@ def sys_out(even):
 
 def program_exit(even):
     root.destroy()
-    exit()
+    sys.exit()
 
 
 def find_contour(img):
@@ -303,7 +303,7 @@ def save_img(event):
 
 def screen_sys_out(even):
     screen_root.destroy()
-    exit()
+    sys.exit()
 
 
 
@@ -472,7 +472,7 @@ time.sleep(0.5)
 img = my_infer.screen()
 # cv2.imshow("img", img)
 # cv2.waitKey()
-# exit()
+# sys.exit()
 
 my_infer.active_nx()
 
@@ -493,7 +493,7 @@ if temp_str == my_infer.char_list:
 else:
     print('Error !!!!')
     quit_vim()
-    exit()
+    sys.exit()
 
 
 my_infer.vertical_and_horizontal_num_update()
@@ -516,7 +516,7 @@ if my_file_cmp('compare_file/calibration.txt', export_dir_name + target_name):
 else:
     print('----------------')
     print('calibration FAIL !!!!!!!')
-    exit()
+    sys.exit()
 
 my_type('clear')
 my_type('enter_key')
@@ -539,7 +539,7 @@ if temp_str.split('\n')[1] == '        abcdefghijklmnopqrstuvwxyz1234567890`-=[]
 else:
     print('\n----------------')
     print('calibration FAIL !!!!!!!')
-    exit()
+    sys.exit()
 
 if message_box(my_infer.hwnd, 'Single file test success!\n Do you want continue for recursive test?') == 1:
     if os.path.isdir('compare_file/test2/'):
@@ -553,5 +553,5 @@ if message_box(my_infer.hwnd, 'Single file test success!\n Do you want continue 
         print('recursive test success')
     else:
         print('recursive test error!!')
-        exit()
+        sys.exit()
 

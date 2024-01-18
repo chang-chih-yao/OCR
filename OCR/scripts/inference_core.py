@@ -35,7 +35,7 @@ class Inference:
         self.hwnd, self.is_nx_active, self.another_monitor = detect_nx()
         if self.is_nx_active == False:
             print('not found NoMachine')
-            exit()
+            sys.exit()
 
         # --------------------------- load cfg  ------------------------ #
         config = load_cfg()
@@ -57,7 +57,7 @@ class Inference:
                 modify_cfg('build_model', 1)
             else:
                 print('please run calibration.py first')
-                exit()
+                sys.exit()
         if calibration:
             self.char_list = ''
             self.data_set_num = ''
@@ -163,7 +163,7 @@ class Inference:
         # if terminal_str.split('\n')[-3].find('Permission denied') >= 0:
         #     print('Permission denied !!!')
         #     print('please cp -r this_dir/ to your dir')
-        #     exit()
+        #     sys.exit()
         open_vim('~/aaa.tmp', recursive_mode=True)
         my_type(':%s/\\.\\///g')
         my_type('enter_key')
@@ -184,7 +184,7 @@ class Inference:
         if len(dir_arr) > 50:
             if message_box(self.hwnd, 'Detect {:d} files in this directory, continue ?'.format(len(dir_arr))) == 0:
                 print('end program')
-                exit()
+                sys.exit()
 
         print(dir_arr)
         self.active_nx()
