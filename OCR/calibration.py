@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-import numpy as np
 import os
 import cv2
 import sys
@@ -8,8 +7,6 @@ from filecmp import cmp, dircmp
 from PIL import ImageGrab
 import tkinter as tk
 import math
-
-from pyautogui import sleep
 
 from scripts.gen_dataset_fast import gen_data
 from scripts.gen_training_data_fast import gen_train

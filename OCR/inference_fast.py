@@ -9,7 +9,6 @@ import tkinter as tk
 import math
 import numpy as np
 import cv2
-import base64
 import wmi
 import ctypes
 from datetime import datetime, timedelta
@@ -20,10 +19,13 @@ from Crypto.Cipher import AES
 from base64 import b64encode, b64decode
 from threading import Thread
 
-from scripts.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag
+from scripts.keyboard_mouse_ctrl import mouse_click, my_type, detect_stop_program_open, detect_stop_program_close, get_exit_flag, open_vim, quit_vim
 from scripts.windows_api import message_box, win_clip
+from scripts.load_model import load_model
 from scripts.inference_core import Inference
-from scripts.cfg import load_cfg
+from scripts.cfg import build_cfg, load_cfg, modify_cfg
+from scripts.gen_dataset_fast import gen_data
+from scripts.gen_training_data_fast import gen_train
 from scripts.background_utility import BG
 
 VERSION = '1.0.0'
