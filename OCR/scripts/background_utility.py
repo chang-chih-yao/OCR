@@ -191,6 +191,8 @@ class BG:
                 self.FrameArea_hwnd = key
                 success = True
                 break
+        if success == False:
+            print('NoMachine 內找不到 FrameArea')
         return success
 
     def nx_bg_screen(self, x1, y1, x2, y2):
@@ -314,6 +316,10 @@ class BG:
             self.nx_bg_type('enter_key')
             
             self.nx_bg_type(':set nu')
+            self.nx_bg_type('enter_key')
+            self.nx_bg_type(':hi LineNr ctermfg=white ctermbg=black')
+            self.nx_bg_type('enter_key')
+            self.nx_bg_type(':hi Normal ctermfg=white ctermbg=black')
             self.nx_bg_type('enter_key')
             # self.nx_bg_type(':1')
             # self.nx_bg_type('enter_key')

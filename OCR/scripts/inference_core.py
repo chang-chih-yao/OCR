@@ -68,7 +68,7 @@ class Inference:
             self.category_binary = ''
             self.img_arr_binary = ''
         else:
-            self.load_model()
+            self.infer_load_model()
 
         # 1080p monitor size
         if calibration:
@@ -98,7 +98,7 @@ class Inference:
     def set_bg_class(self, bg):
         self.bg = bg
 
-    def load_model(self):
+    def infer_load_model(self):
         self.char_list, self.data_set_num, self.category, self.img_arr, self.char_list_binary, self.data_set_num_binary, self.category_binary, self.img_arr_binary = load_model(w=self.w, h=self.h)
 
     def vertical_and_horizontal_num_update(self):
@@ -229,6 +229,7 @@ class Inference:
         self.bg.nx_bg_quit_vim()
         return my_str
 
+    '''
     def mp_screen_binary(self):
         old_str = ''
         new_str = ''
@@ -268,7 +269,8 @@ class Inference:
                     idx += 1
                     self.bg.nx_bg_type('pagedown_key', nodelay=True)
         # cv2.imwrite(f'test.png', crop_img)
-
+    '''
+        
     def fast_screen(self):
         old_str = ''
         new_str = ''
@@ -407,6 +409,10 @@ class Inference:
         # open_vim(f'{input_file}.ttt')
         self.bg.nx_bg_type(':set nu')
         self.bg.nx_bg_type('enter_key')
+        self.bg.nx_bg_type(':hi LineNr ctermfg=white ctermbg=black')
+        self.bg.nx_bg_type('enter_key')
+        self.bg.nx_bg_type(':hi Normal ctermfg=white ctermbg=black')
+        self.bg.nx_bg_type('enter_key')
 
         t = Thread(target=self.fast_screen, daemon=True)
         t.start()
@@ -512,6 +518,10 @@ class Inference:
         
         self.bg.nx_bg_type(':set nu')
         self.bg.nx_bg_type('enter_key')
+        self.bg.nx_bg_type(':hi LineNr ctermfg=white ctermbg=black')
+        self.bg.nx_bg_type('enter_key')
+        self.bg.nx_bg_type(':hi Normal ctermfg=white ctermbg=black')
+        self.bg.nx_bg_type('enter_key')
 
         t = Thread(target=self.fast_screen, daemon=True)
         t.start()
@@ -597,7 +607,7 @@ class Inference:
         # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
 
         # print(f'screen time:{time.perf_counter() - start_time}')
-        #ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        # ret, th1 = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         return frame
 
     def infer(self, input_img, vertical_num=None, horizontal_num=None, file_eof=0, line_cou=1, vim_mode=True, draw_plot=False):
@@ -640,6 +650,8 @@ class Inference:
                 else:
                     ################## detect background color ##################
                     bg_color = crop_img[0, 0]   # assume [0, 0] is bg color
+                    # if bg_color != 0:
+                    #     print(f'bg_color != 0, {bg_color}')
                     for a in range(self.h):
                         for b in range(self.w):
                             if crop_img[a, b] == bg_color:
@@ -648,24 +660,33 @@ class Inference:
                                 crop_img[a, b] = 255
                     ################## detect background color ##################
                     mid = crop_img.copy()
-                    if (self.log_flag):
+                    if self.log_flag == 1:
                         cv2.imwrite('log/{:04d}.png'.format(self.log_cou), mid)
                         self.log_cou += 1
                     # cv2.imshow('mid', mid)
                     # cv2.waitKey()
                     mid = (mid/255).astype('uint8')
                     mid = mid.flatten()
+                    # print(mid.shape, mid.dtype)                        # (190,) uint8
+                    # print(self.img_arr.shape, self.img_arr.dtype)      # (190, 190) uint8
                     result_arr = np.absolute(self.img_arr - mid)
+                    # print(result_arr, result_arr.shape, result_arr.dtype)    # shape: (190, 190)   dtype: uint8
                     result_sum = np.sum(result_arr, axis=1)                                      # (data_set_num*category,)   int32
-                    result = np.argmin(result_sum) // self.data_set_num
+                    argmin_idx = np.argmin(result_sum)
+                    result = argmin_idx // self.data_set_num
+                    # if result_sum[argmin_idx] != 0:
+                    #     print(result_sum)
+                    #     print(result_sum[argmin_idx])
+                    #     print(result, self.char_list[result])
                     if draw_plot:
-                        #line1.set_ydata(result_sum[::2])  # if data_set_num == 2
-                        line1.set_ydata(result_sum)        # if data_set_num == 1
+                        if self.data_set_num == 1:
+                            line1.set_ydata(result_sum)        # if data_set_num == 1
+                        elif self.data_set_num == 2:
+                            line1.set_ydata(result_sum[::2])  # if data_set_num == 2
                         fig.canvas.draw()
                         time.sleep(1)
                         fig.canvas.flush_events()
 
-                    #print(result, self.char_list[result])
                 if j < self.vim_text_bias_width and vim_mode:
                     front_str += self.char_list[result]
                     if j == 7:

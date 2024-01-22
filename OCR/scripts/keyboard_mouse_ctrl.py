@@ -1,7 +1,7 @@
 import pynput
 from pynput.keyboard import Key
 from pynput.mouse import Button
-from pynput import keyboard
+# from pynput import keyboard
 import time
 import sys
 from scripts.cfg import load_cfg
@@ -115,6 +115,10 @@ def open_vim(my_str='', recursive_mode=False):
         my_type('enter_key')
         
         my_type(':set nu')
+        my_type('enter_key')
+        my_type(':hi LineNr ctermfg=white ctermbg=black')
+        my_type('enter_key')
+        my_type(':hi Normal ctermfg=white ctermbg=black')
         my_type('enter_key')
         # my_type(':1')
         # my_type('enter_key')

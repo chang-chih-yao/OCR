@@ -408,11 +408,11 @@ def buttonRelease_1(event):
             #     for j in range(int(frame.shape[1]/9)):
             #         print(i*18, j*9)
 
-            ret, th1 = cv2.threshold(frame, 1, 255, cv2.THRESH_BINARY)
+            ret, th1 = cv2.threshold(frame, 0, 255, cv2.THRESH_BINARY)
             # cv2.imshow("img", th1)
             # cv2.waitKey()
             #print(th1.shape)
-            terminal_str = my_infer.infer(frame, vertical_num=int(th1.shape[0]/txt_h), horizontal_num=int(th1.shape[1]/txt_w), vim_mode=False)[0]
+            terminal_str = my_infer.infer(frame, vertical_num=int(th1.shape[0]/txt_h), horizontal_num=int(th1.shape[1]/txt_w), vim_mode=False, draw_plot=False)[0]
             if terminal_str[len(terminal_str)-1] == '\n':
                 terminal_str = terminal_str[:-1]
             win_clip(terminal_str)
@@ -454,6 +454,7 @@ def sys_out(even):
 
 if __name__ == '__main__':
     my_infer = Inference(calibration=False)
+    my_infer.log_flag = 1
     export_file_root = 'export/'
 
     print('Checking\n')

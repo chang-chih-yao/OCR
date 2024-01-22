@@ -10,11 +10,12 @@ import math
 
 from scripts.gen_dataset_fast import gen_data
 from scripts.gen_training_data_fast import gen_train
-from scripts.load_model import load_model
+# from scripts.load_model import load_model
 from scripts.cfg import build_cfg, load_cfg, modify_cfg
 from scripts.windows_api import message_box, win_clip
 from scripts.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 from scripts.inference_core import Inference
+from scripts.background_utility import BG
 
 def button_1(event):
     global x, y ,xstart, ystart, place_x1, place_y1, block_w, block_h
@@ -306,9 +307,13 @@ def screen_sys_out(even):
     sys.exit()
 
 
-
-
 infer_tmp = Inference(calibration=True)
+bg = BG()
+if bg.find_nx_hwnd():
+    infer_tmp.set_bg_class(bg=bg)
+else:
+    sys.exit()
+
 infer_tmp.active_nx()
 txt_w = infer_tmp.w
 txt_h = infer_tmp.h
@@ -324,7 +329,7 @@ my_type('       ')
 my_type('enter_key')
 my_type('       ')
 
-time.sleep(5)
+time.sleep(3)
 
 
 
@@ -373,6 +378,10 @@ modify_cfg('h', detect_h)
 
 
 my_infer = Inference(calibration=True)
+if bg.find_nx_hwnd():
+    my_infer.set_bg_class(bg=bg)
+else:
+    sys.exit()
 my_config = load_cfg()
 
 my_infer.active_nx()
@@ -483,7 +492,8 @@ threshold = int(my_config['cust']['threshold'])
 print(my_infer.x1, my_infer.x2, my_infer.y1, my_infer.y2, my_infer.w, my_infer.h)
 gen_data(img, difference=my_infer.difference, threshold=threshold, w=my_infer.w, h=my_infer.h)
 gen_train()
-my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model(w=my_infer.w, h=my_infer.h)
+# my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model(w=my_infer.w, h=my_infer.h)
+my_infer.infer_load_model()
 
 img = my_infer.screen()
 temp_str = my_infer.infer(img, vertical_num=1, horizontal_num=len(my_infer.char_list) + my_infer.vim_text_bias_width)[0]
@@ -525,20 +535,30 @@ my_type('enter_key')
 my_type('python bold_gen.py')
 my_type('enter_key')
 img = my_infer.screen(vim_mode=False)
-ret, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
-gen_data(th1[my_infer.h:, :], append_new_data=True, dataset_name='binary_data_bold_', w=my_infer.w, h=my_infer.h)
+# ret, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
+gen_data(img[my_infer.h:, :], difference=my_infer.difference, threshold=threshold, append_new_data=True, dataset_name='binary_data_bold_', w=my_infer.w, h=my_infer.h)
 gen_train()
-my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model(w=my_infer.w, h=my_infer.h)
+# my_infer.char_list, my_infer.data_set_num, my_infer.category, my_infer.img_arr = load_model(w=my_infer.w, h=my_infer.h)
+my_infer.infer_load_model()
 
-temp_str, file_eof, line_cou = my_infer.infer(img, vertical_num=my_infer.y2//my_infer.h, horizontal_num=(my_infer.x2-my_infer.x1)//my_infer.w, vim_mode=False)
-
-if temp_str.split('\n')[1] == '        abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?':
+temp_str = my_infer.infer(img, vim_mode=False)[0]
+# temp_str, file_eof, line_cou = my_infer.infer(img, vertical_num=my_infer.y2//my_infer.h, horizontal_num=(my_infer.x2-my_infer.x1)//my_infer.w, vim_mode=False)
+# temp_str, file_eof, line_cou = my_infer.infer(img, vertical_num=my_infer.y2//my_infer.h, horizontal_num=(my_infer.x2-my_infer.x1)//my_infer.w, vim_mode=False)
+print(temp_str)
+print('---------------------------')
+print(temp_str.split('\n')[1])
+print('---------------------------')
+correct_str = '        abcdefghijklmnopqrstuvwxyz1234567890`-=[]\\;\',./ ABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(~_+{}|:"<>?'
+if temp_str.split('\n')[1] == correct_str:
     print('\n----------------')
     print('calibration PASS !!!!')
     print('now you can use inference_fast.py script')
 else:
     print('\n----------------')
     print('calibration FAIL !!!!!!!')
+    for i in range(len(correct_str)):
+        if temp_str.split('\n')[1][i] != correct_str[i]:
+            print(temp_str.split('\n')[1][i], correct_str[i])
     sys.exit()
 
 if message_box(my_infer.hwnd, 'Single file test success!\n Do you want continue for recursive test?') == 1:

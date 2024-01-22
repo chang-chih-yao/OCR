@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PIL import ImageGrab
 
-def screen(x1, y1, x2, y2, threshold=1):
+def screen(x1, y1, x2, y2, threshold=0):
     print(x1, y1, x2, y2)
     img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
     img_np = np.array(img)
