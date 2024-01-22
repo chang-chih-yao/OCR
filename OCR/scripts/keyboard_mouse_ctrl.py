@@ -9,15 +9,15 @@ from scripts.windows_api import win_clip
 import win32gui, win32ui, win32con, win32api
 
 
-def on_press(key):
-    '''
-    press backspace key on your keyboard anytime to stop program
-    '''
-    global exit_flag
-    if key == Key.backspace and detect_exit_flag == 1:
-        print('exit()')
-        exit_flag = 1
-        return False
+# def on_press(key):
+#     '''
+#     press backspace key on your keyboard anytime to stop program
+#     '''
+#     global exit_flag
+#     if key == Key.backspace and detect_exit_flag == 1:
+#         print('exit()')
+#         exit_flag = 1
+#         return False
 
 def my_type(my_str = '', nodelay=False):
     '''
