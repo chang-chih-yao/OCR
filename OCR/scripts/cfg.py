@@ -3,30 +3,37 @@ import os
 
 def build_cfg():
     config = configparser.ConfigParser()
-    config['DEFAULT'] = {'w'           : '9',
-                        'h'           : '18',
-                        'x1'           : '0',
-                        'y1'            : '0',
-                        'x2'            : '1920',
-                        'y2'            : '1080',
-                        'difference'    : '1',
-                        'type_speed'    : '0.05',
-                        'cmd_speed'     : '0.5',
-                        'build_model'   : '0',
-                        'threshold'     : '1'}
+    config['DEFAULT'] = {
+        'w'                 : '9',
+        'h'                 : '18',
+        'x1'                : '0',
+        'y1'                : '0',
+        'x2'                : '1920',
+        'y2'                : '1080',
+        'difference'        : '1',
+        'type_speed'        : '0.05',
+        'cmd_speed'         : '0.5',
+        'build_model'       : '0',
+        'threshold'         : '1',
+        'framearea_hwnd'    : '-1',
+    }
     
-    config['cust']    = {'w'           : '9',
-                        'h'           : '18',
-                        'x1'           : '0',
-                        'y1'            : '0',
-                        'x2'            : '1920',
-                        'y2'            : '1080',
-                        'difference'    : '1',
-                        'type_speed'    : '0.05',
-                        'cmd_speed'     : '0.5',
-                        'build_model'   : '0',
-                        'threshold'     : '1'}
+    config['cust']    = {
+        'w'                 : '9',
+        'h'                 : '18',
+        'x1'                : '0',
+        'y1'                : '0',
+        'x2'                : '1920',
+        'y2'                : '1080',
+        'difference'        : '1',
+        'type_speed'        : '0.05',
+        'cmd_speed'         : '0.5',
+        'build_model'       : '0',
+        'threshold'         : '1',
+        'framearea_hwnd'    : '-1',
+    }
     
+    print('create new cfg.ini in cfg/')
     with open('cfg/cfg.ini', 'w') as configfile:
         config.write(configfile)
 

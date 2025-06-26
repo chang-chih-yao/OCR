@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import sys
 from .keyboard_mouse_ctrl import get_exit_flag, type_speed, cmd_speed
+from .cfg import load_cfg
 
 class BG:
     def __init__(self) -> None:
@@ -183,6 +184,11 @@ class BG:
         elif win_hwnd == -2:
             print(f'請勿把 "NoMachine" 視窗縮下去工具列')
             return False
+        config = load_cfg()
+        if config['cust']['framearea_hwnd'] != '-1':
+            self.FrameArea_hwnd = int(config['cust']['framearea_hwnd'], 16)
+            print(f'使用客製化 NoMachine FrameArea_hwnd: {self.FrameArea_hwnd}')
+            return True
         child_handles = self.Find_Child_hwnd(win_hwnd)
         self.FrameArea_hwnd = 0
         success = False

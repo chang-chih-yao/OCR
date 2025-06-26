@@ -21,6 +21,8 @@ OCR/test_folder/*
 OCR/test_folder_2/*
 
 OCR/dist/*
+OCR/build/*
+OCR/calibration_zip/*
 OCR/build_required_files/*
 OCR/release/*
 

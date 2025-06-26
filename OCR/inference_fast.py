@@ -507,18 +507,19 @@ if __name__ == '__main__':
             os.mkdir(export_dir_name)
             print('create folder : ' + export_dir_name)
 
-        detect_stop_program_open()
-        if choice == '3' or choice == '5':
-            my_infer.active_nx()
-
         bg = BG()
         # print(bg.list_all_visible_windows())
         if bg.find_nx_hwnd():
             my_infer.set_bg_class(bg=bg)
+            my_infer.check_nx_window()
             # print(bg.FrameArea_hwnd)
         else:
             # print('not found nx hwnd')
             continue
+
+        detect_stop_program_open()
+        # if choice == '3' or choice == '5':
+            # my_infer.active_nx()
 
         if choice == '1':
             temp_str = my_infer.single_file_mode(target_name)

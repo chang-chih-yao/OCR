@@ -29,6 +29,9 @@ class Inference:
 
     def reset_var(self):
         self.img_is_new = False
+        
+    def check_nx_window(self):
+        self.hwnd, self.is_nx_active, self.another_monitor = detect_nx()
 
     def set_up(self, calibration):
         # --------------------------- detect nx ------------------------ #
@@ -293,7 +296,7 @@ class Inference:
                 result_sum = np.sum(result_arr, axis=1)
                 result_idx = np.argmin(result_sum)
                 new_str += self.char_list_binary[result_idx]
-            # print(new_str)
+            # print(f'new_str: {new_str}')
             if new_str != old_str:
                 crop_img = frame[self.h:self.h*2, 0:self.w]        # 第2行的第1個char
                 bg_color = crop_img[0, 0]   # assume [0, 0] is background color
@@ -305,17 +308,18 @@ class Inference:
                 result_idx = np.argmin(result_sum)
 
                 if self.char_list_binary[result_idx] == '~':       # 第2行的第1個char
-                    if int(new_str) == 1:                          # 代表該文件只有一行
-                        while True:
-                            if not self.img_is_new:
-                                self.img_lock.acquire()
-                                self.thread_img = frame
-                                self.img_is_new = True
-                                self.img_lock.release()
-                                break
-                            else:
-                                # print('wait detect img')
-                                time.sleep(0.1)
+                    # print('第2行的第1個char')
+                    # if int(new_str) == 1:                          # 代表該文件只有一行
+                    while True:
+                        if not self.img_is_new:
+                            self.img_lock.acquire()
+                            self.thread_img = frame
+                            self.img_is_new = True
+                            self.img_lock.release()
+                            break
+                        else:
+                            # print('wait detect img')
+                            time.sleep(0.1)
                     # print('end')
                     break
                 else:
@@ -352,7 +356,8 @@ class Inference:
 
         # cmd = f'python to_binary.py 180 {input_file} {input_file}.ttt'
         # cmd = f'/rsc/R7227/.local/open/file_dump 180 {input_file} {input_file}.ttt'
-        cmd = f'/rsc/R7227/.local/open/file_dump -f 180 {input_file}'
+        cmd = f'/rsc/R7227/o/file_dump -f 180 {input_file}'
+        # cmd = f'python file_dump.py -f 180 {input_file}'
         self.bg.nx_bg_type(cmd)
         self.bg.nx_bg_type('enter_key')
         # idx = 0
@@ -474,7 +479,8 @@ class Inference:
 
     def folder_mode_binary(self, input_file, export_dir_name):
         self.reset_var()
-        cmd = f'/rsc/R7227/.local/open/file_dump -d 180 {input_file}'
+        cmd = f'/rsc/R7227/o/file_dump -d 180 {input_file}'
+        # cmd = f'python file_dump.py -d 180 {input_file}'
         self.bg.nx_bg_type(cmd)
         self.bg.nx_bg_type('enter_key')
         # idx = 0
