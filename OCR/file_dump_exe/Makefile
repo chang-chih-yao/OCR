@@ -50,5 +50,6 @@ build_app:
 	rm -f scripts/my_func.so
 	mv tmp/my_func.py scripts/
 
-build_all: clean build_cython build_app clean
+build_all: clean build_cython build_app
+	@$(MAKE) -s clean
 	@echo "DONE"

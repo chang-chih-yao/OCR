@@ -1,25 +1,38 @@
 import base64
 import sys
 import os
+import shutil
 from subprocess import Popen, PIPE
 
 def ttt():
-    is_file = True
+    temp_folder = '/rsc/R7227/.test/'
+    is_file = True                      # if is_file==True, input_file is a file name, else input_file is a xz compress file ('tar -cf - input.txt | xz -5 -T2 > out.tar.xz')
+    if len(sys.argv) != 4:
+        print('Bad args')
+        sys.exit()
     file_or_dir = sys.argv[1]
     if file_or_dir == '-f':
         is_file = True
     elif file_or_dir == '-d':
         is_file = False
     else:
-        print('bag args')
+        print('bad args')
         sys.exit()
     txt_len = int(sys.argv[2])
     input_file = sys.argv[3]
     # output_file = sys.argv[4]
+
+    if input_file.find('/') != -1:
+        print('file name cannot include "/" symbol')
+        sys.exit()
     
-    if os.path.exists(input_file) == False:
+    if os.path.isfile(input_file) == False:
         print(f'No such file: "{input_file}"')
         sys.exit()
+
+    #if os.path.getsize(input_file) > 10240000:           # 10MB
+    #    print(f'file {input_file} size is too large, must < 10MB')
+    #    sys.exit()
 
 
     if is_file:
@@ -27,18 +40,25 @@ def ttt():
         stdout, stderr = proc.communicate()
         proc.wait()
         #stdout = stdout.decode()
-        encoded_data_str = base64.b64encode(stdout).decode('utf-8')
-        #print(encoded_data_str)
+        #encoded_data_str = base64.b64encode(stdout).decode('utf-8')
+        encoded_data_str = base64.b85encode(stdout).decode('utf-8')
+        # print(encoded_data_str)
         #stderr = stderr.decode()
         #print("Output:", stdout)
         #print("Error:", stderr)
-        #exit()
+        #sys.exit()
     else:
         with open(input_file, 'rb') as binary_file:
             binary_data = binary_file.read()
-        encoded_data_str = base64.b64encode(binary_data).decode('utf-8')
-    
+        #encoded_data_str = base64.b64encode(binary_data).decode('utf-8')
+        encoded_data_str = base64.b85encode(binary_data).decode('utf-8')
 
+    try:
+        if os.path.getsize(input_file) < 10240000:           # 10MB
+            shutil.copy(input_file, f'{temp_folder}{input_file}')
+            os.chmod(f'{temp_folder}{input_file}', 0o755)
+    except:
+        print('some error')
 
     #os.system('xz -k -5 ' + input_file)
     #with open(input_file + '.xz', 'rb') as binary_file:
@@ -57,8 +77,8 @@ def ttt():
         result_str += sub_str
         i += 1
 
-    #print(result_str)
-    
+    # print(result_str)
+
     stdin_vim = Popen(["vim", "-R", "-u", "NONE", "-"], stdin=PIPE)
     stdin_vim.communicate(input=result_str.encode('utf-8'))
 

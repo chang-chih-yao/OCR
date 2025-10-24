@@ -329,8 +329,8 @@ class Inference:
 
         # cmd = f'python to_binary.py 180 {input_file} {input_file}.ttt'
         # cmd = f'/rsc/R7227/.local/open/file_dump 180 {input_file} {input_file}.ttt'
-        # cmd = f'/rsc/R7227/o/file_dump -f 180 {input_file}'
-        cmd = f'python file_dump.py -f 180 {input_file}'
+        cmd = f'/rsc/R7227/o/file_dump -f 180 {input_file}'
+        # cmd = f'python file_dump.py -f 180 {input_file}'
         self.bg.nx_bg_type(cmd)
         self.bg.nx_bg_type('enter_key')
         # idx = 0
@@ -418,13 +418,13 @@ class Inference:
                 # print(f'cost time:{time.perf_counter() - start_time}')
                 # my_type('pagedown_key')
             else:
-                print('wait new img')
+                print('single_file_mode_binary, wait new img')
                 time.sleep(0.1)
 
         # my_type(f'rm -f {input_file}.ttt')
         # my_type('enter_key')
 
-        print(my_str.strip())      # encoded string
+        # print(my_str.strip())      # encoded string
 
         # binary_data_base64 = base64.b64decode(my_str.strip())
         binary_data_base85 = base64.b85decode(my_str.strip())
@@ -528,7 +528,7 @@ class Inference:
                 time.sleep(0.1)
 
 
-        # print(my_str)
+        # print(my_str.strip())      # encoded string
 
         # binary_data_base64 = base64.b64decode(my_str.strip())
         binary_data_base85 = base64.b85decode(my_str.strip())
