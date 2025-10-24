@@ -147,29 +147,29 @@ class Certificate_key:
             post_json_str = json.dumps(my_dict)
             result = post(post_url, json=post_json_str, timeout=10)
             if result.status_code == 200:
-                self.logger.info(f'timing check: {result.text}')
+                print(f'timing check: {result.text}')
                 if result.text == 'PASS':
                     check_pass = True
                 else:
                     check_pass = False
             elif result.status_code == 403:   # Forbidden, The client does not have access rights to the content
-                self.logger.info('403 Forbidden')
+                print('403 Forbidden')
                 internet_error = True
             elif result.status_code == 404:   # Not Found
-                self.logger.info('404 Not Found')
+                print('404 Not Found')
                 internet_error = True
             else:
-                self.logger.info(f'POST_ERROR, status_code:{result.status_code}')
+                print(f'POST_ERROR, status_code:{result.status_code}')
                 internet_error = True
         except Exception as e:
             # self.logger.exception(e)
-            self.logger.info(f'Exception : post_to_url, error msg:{e}')
+            print(f'Exception : post_to_url, error msg:{e}')
             internet_error = True
 
         if internet_error:
             self.my_var.is_exception = True
             self.my_var.NEED_TO_UPLOAD_ERROR_LOG = False
-            self.logger.info("timing check internet error")
+            print("timing check internet error")
             MessageBox = ctypes.windll.user32.MessageBoxW
             MessageBox(None, '錯誤! 伺服器目前沒有回應, 請稍後再試, 如果一直沒有回應, 請通知開發人員', '網路連線檢查', 0)
             raise Exception('timing check internet error')
