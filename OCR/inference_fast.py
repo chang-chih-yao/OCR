@@ -1,8 +1,11 @@
 import time
 from datetime import datetime
+import traceback
 import numpy as np
 import os
 import sys
+import subprocess
+import shlex
 
 from PIL import ImageGrab
 import tkinter as tk
@@ -31,6 +34,15 @@ from scripts.background_utility import BG
 VERSION = '1.0.0'
 
 print(f'VERSION : {VERSION}')
+
+# 選擇你要給的權限（二選一）
+GRANT_TO_CURRENT_USER = True   # True: 給目前登入的本機使用者；False: 給本機 Users 群組
+GRANT_FULL_CONTROL   = True    # True: 完整控制(F)；False: 只讀 + 執行(RX)
+ROOT_DIR = os.getcwd()         # D:\Code\GitHub\OCR\OCR
+
+# 取得目前使用者 SID（whoami /user）
+sid = subprocess.check_output("whoami /user", shell=True, text=True)
+sid = [p for p in sid.split() if p.startswith("S-1-")][-1]  # 抓出 SID
 
 if ctypes.windll.shell32.IsUserAnAdmin() == 0:   # 若不是用管理員權限開本程式的話
     MessageBox_Admin_Check = ctypes.windll.user32.MessageBoxW
@@ -314,16 +326,16 @@ class Certificate_key:
             print(f'Exception : post_to_url, error msg:{e}')
             return self.TIMEOUT_MSG
 
-def online_check():
-    start_time = time.time()
-    while(True):
-        if my_var.is_exception == True or my_var.on_closing_flag == True:
-            break
-        if int(time.time() - start_time) >= 60*20:   # 20 min
-            start_time = time.time()
-            my_key.check(begining=False, status='online', version=VERSION)
+# def online_check():
+#     start_time = time.time()
+#     while(True):
+#         if my_var.is_exception == True or my_var.on_closing_flag == True:
+#             break
+#         if int(time.time() - start_time) >= 60*20:   # 20 min
+#             start_time = time.time()
+#             my_key.check(begining=False, status='online', version=VERSION)
         
-        time.sleep(1)
+#         time.sleep(1)
 
 def button_1(event):
     global x, y ,xstart, ystart, place_x1, place_y1, block_w, block_h
@@ -451,8 +463,48 @@ def my_motion_test(event=None):
 def sys_out(even):
     root.destroy()
 
+def run(cmd):
+    print(">", cmd)
+    # subprocess.run(cmd, shell=True, check=False)
+    subprocess.run(cmd, shell=True, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def change_dir_auth(TARGET_DIR:str):
+    target_dir_win = TARGET_DIR.replace("/", "\\")
+    if target_dir_win[-1] == '\\':
+        target_dir_win = target_dir_win[:-1]
+    WIN_FULL_DIR = f'{ROOT_DIR}\\{target_dir_win}'
+
+    # 取得擁有權：改用『目前使用者』，不要 /A
+    run(fr'takeown /F "{WIN_FULL_DIR}" /R /D Y')
+
+    # （可選但常見地有用）把擁有者直接設成你自己的 SID 字串
+    run(fr'icacls "{WIN_FULL_DIR}" /setowner *{sid} /T /C')
+
+    # 確保啟用繼承 (通常能解掉許多無法讀取的情況)
+    run(fr'icacls "{WIN_FULL_DIR}" /inheritance:e')
+
+    run(fr'icacls "{WIN_FULL_DIR}" /reset /T /C')  # 將 ACL 重置為預設（繼承為主）
+
+    try:
+        # 先嘗試移除 DENY；若 1332（名稱/SID 對不到）就跳過
+        run(fr'icacls "{WIN_FULL_DIR}" /remove:d *{sid} /T')
+        # if res.returncode == 1332:
+        #     print("帳號/SID 對不到，略過移除 DENY 步驟（可能本來就沒有 DENY）。")
+    except Exception as e:
+        print(f"移除 DENY 失敗，可能本來就沒有 DENY，略過此步驟。錯誤訊息：{e}")
+
+    # 移除常見的 DENY（Everyone / Users）；你原本只移除了 *{sid} 的 DENY
+    run(fr'icacls "{WIN_FULL_DIR}" /remove:d Everyone /T')
+    run(fr'icacls "{WIN_FULL_DIR}" /remove:d Users /T')
+
+    # 4) 重新授權給你自己（遞迴、套用到檔案與子資料夾）
+    run(fr'icacls "{WIN_FULL_DIR}" /grant:r *{sid}:(OI)(CI)F /T /C')
+
+    print(f'change_dir_auth: "{WIN_FULL_DIR}" Done.')
 
 if __name__ == '__main__':
+    # change_dir_auth('export/20251024_18_52_09')
+    # exit()
     my_infer = Inference(calibration=False)
     my_infer.log_flag = 1
     export_file_root = 'export/'
@@ -469,8 +521,8 @@ if __name__ == '__main__':
 
     print('Start\n')
 
-    t = Thread(target=online_check, daemon=True)
-    t.start()
+    # t = Thread(target=online_check, daemon=True)
+    # t.start()
 
     while True:
         print('please input mode : 1.single file mode  2.recursive mode  3.terminal export  4.current opened file  5.screen  6.exit  7. single file mode binary  8. folder binary')
@@ -483,7 +535,11 @@ if __name__ == '__main__':
         
         if choice == '6':
             break
-        elif choice == '1' or choice == '7':
+        r = my_infer.set_up(calibration=False)
+        if r == False:
+            continue
+
+        if choice == '1' or choice == '7':
             print('please input file name :')
             try:
                 target_name = input()
@@ -518,22 +574,32 @@ if __name__ == '__main__':
             continue
 
         detect_stop_program_open()
-        # if choice == '3' or choice == '5':
-            # my_infer.active_nx()
+        if choice == '3' or choice == '5':
+            my_infer.active_nx()
 
         if choice == '1':
             temp_str = my_infer.single_file_mode(target_name)
             my_infer.write_in_file(export_dir_name, target_name, temp_str)
         elif choice == '7':
             # my_infer.mp_screen_binary()
-            binary_data = my_infer.single_file_mode_binary(target_name, export_dir_name, target_name)
+            try:
+                binary_data = my_infer.single_file_mode_binary(target_name, export_dir_name, target_name)
+            except Exception as e:
+                print(f'Exception during single_file_mode_binary: {e}')
+                continue
             # my_infer.write_in_file_binary(export_dir_name, target_name, binary_data)
             # binary_data = base64.b64decode(temp_str)
             # my_infer.write_in_file_binary(export_dir_name, target_name, binary_data)
             # with open(output_file_path, 'wb') as outfile:
             #     outfile.write(binary_data)
+            change_dir_auth(export_dir_name)
         elif choice == '8':
-            binary_data = my_infer.folder_mode_binary(target_name, export_dir_name)
+            try:
+                binary_data = my_infer.folder_mode_binary(target_name, export_dir_name)
+            except Exception as e:
+                print(f'Exception during folder_mode_binary: {e}')
+                continue
+            change_dir_auth(export_dir_name)
         elif choice == '2':
             my_infer.recursive_mode(export_dir_name)
         elif choice == '3':
@@ -546,6 +612,8 @@ if __name__ == '__main__':
             f = open(export_dir_name + 'terminal.txt', 'w')
             f.write(terminal_str)
             f.close()
+            MessageBox = ctypes.windll.user32.MessageBoxW
+            MessageBox(None, 'Done', 'Info', 0)
         elif choice == '4':
             my_infer.current_opened_file(export_dir_name)
         elif choice == '5':
@@ -605,6 +673,9 @@ if __name__ == '__main__':
             #root.bind("<Button-3>",button_3)   #滑鼠右鍵點選->截圖並儲存圖片
             root.bind("<Motion>", my_motion_test)
             root.mainloop()
+
+            # MessageBox = ctypes.windll.user32.MessageBoxW
+            # MessageBox(None, 'Done', 'Info', 0)
         
         print('------------------------------------------')
         if get_exit_flag() == 1:

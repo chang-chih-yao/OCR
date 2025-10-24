@@ -151,7 +151,7 @@ cmd_speed = float(config['cust']['cmd_speed'])
 my_keyboard = pynput.keyboard.Controller()
 my_mouse = pynput.mouse.Controller()
 
-exit_flag = 0
+exit_flag = 0         # 按下 backspace 鍵後變1, 程式結束, 但現在都改成用背景執行, 所以目前已無作用
 detect_exit_flag = 1
 # listener = keyboard.Listener(on_press=on_press)
 # listener.start()

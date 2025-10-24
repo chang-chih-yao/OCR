@@ -6,6 +6,53 @@ import sys
 from .keyboard_mouse_ctrl import get_exit_flag, type_speed, cmd_speed
 from .cfg import load_cfg
 
+# 常用虛擬鍵碼 (VK_CODE)
+VK_CODES = {
+    # 字母鍵
+    'A': 0x41, 'B': 0x42, 'C': 0x43, 'D': 0x44, 'E': 0x45,
+    'F': 0x46, 'G': 0x47, 'H': 0x48, 'I': 0x49, 'J': 0x4A,
+    'K': 0x4B, 'L': 0x4C, 'M': 0x4D, 'N': 0x4E, 'O': 0x4F,
+    'P': 0x50, 'Q': 0x51, 'R': 0x52, 'S': 0x53, 'T': 0x54,
+    'U': 0x55, 'V': 0x56, 'W': 0x57, 'X': 0x58, 'Y': 0x59,
+    'Z': 0x5A,
+    
+    # 數字鍵（主鍵盤）
+    '0': 0x30, '1': 0x31, '2': 0x32, '3': 0x33, '4': 0x34,
+    '5': 0x35, '6': 0x36, '7': 0x37, '8': 0x38, '9': 0x39,
+    
+    # 功能鍵
+    'F1': 0x70, 'F2': 0x71, 'F3': 0x72, 'F4': 0x73,
+    'F5': 0x74, 'F6': 0x75, 'F7': 0x76, 'F8': 0x77,
+    'F9': 0x78, 'F10': 0x79, 'F11': 0x7A, 'F12': 0x7B,
+    
+    # 控制鍵
+    'ENTER': 0x0D,
+    'ESC': 0x1B,
+    'SPACE': 0x20,
+    'TAB': 0x09,
+    'BACKSPACE': 0x08,
+    'SHIFT': 0x10,
+    'CTRL': 0x11,
+    'ALT': 0x12,
+    'DELETE': 0x2E,
+    'HOME': 0x24,
+    'END': 0x23,
+    'PAGE_UP': 0x21,
+    'PAGE_DOWN': 0x22,
+    
+    # 方向鍵
+    'LEFT': 0x25,
+    'UP': 0x26,
+    'RIGHT': 0x27,
+    'DOWN': 0x28,
+    
+    # 小鍵盤數字鍵
+    'NUMPAD0': 0x60, 'NUMPAD1': 0x61, 'NUMPAD2': 0x62,
+    'NUMPAD3': 0x63, 'NUMPAD4': 0x64, 'NUMPAD5': 0x65,
+    'NUMPAD6': 0x66, 'NUMPAD7': 0x67, 'NUMPAD8': 0x68,
+    'NUMPAD9': 0x69,
+}
+
 class BG:
     def __init__(self) -> None:
         self.FrameArea_hwnd = 0
@@ -122,7 +169,9 @@ class BG:
 
         # self.lock.acquire()
         if cfg_x1 >= self.x1 and cfg_y1 >= self.y1 and cfg_x2 <= self.x2 and cfg_y2 <= self.y2:
+            # start_time = time.perf_counter()
             img = self.background_screenshot(hwnd, self.w, self.h)   # (hwnd, w, h)
+            # print(f'background_screenshot time: {time.perf_counter() - start_time:.4f} sec')
             cfg_h = cfg_y2 - cfg_y1
             cfg_w = cfg_x2 - cfg_x1
             new_y1 = cfg_y1-self.y1
@@ -157,12 +206,19 @@ class BG:
             signedIntsArray = dataBitMap.GetBitmapBits(True)
             # img = np.array(dataBitMap.GetBitmapBits(), dtype=np.uint8)
             # img = np.fromstring(signedIntsArray, dtype='uint8')
-            img = np.frombuffer(signedIntsArray, dtype='uint8')
-            img = np.reshape(img, (height, width, 4))
+
+            # 32bpp => 每像素 4 位元組（BGRA）；DDB 通常 bottom-up
+            img = np.frombuffer(signedIntsArray, dtype=np.uint8).reshape((height, width, 4))
+
+            # 轉成 top-down（Windows DDB 往往是 bottom-up）
+            # img = np.flip(img, 0)            # O(1) 視圖翻轉，幾乎不拷貝
+
+            # img = np.frombuffer(signedIntsArray, dtype='uint8').reshape((height, width, 4))
             img = img[:, :, 0:3].copy()
-            # print(img)
-            # print(img.shape)
-            # print(img.dtype)
+            # # # print(img)
+            # # # print(img.shape)
+            # # # print(img.dtype)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             #dataBitMap.SaveBitmapFile(cDC, 'screenshot.bmp')
             dcObj.DeleteDC()
@@ -170,7 +226,6 @@ class BG:
             win32gui.ReleaseDC(hwnd, wDC)
             win32gui.DeleteObject(dataBitMap.GetHandle())
 
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             return img
         except Exception as e:
             print(e)
@@ -222,12 +277,16 @@ class BG:
             elif (my_str == 'pagedown_key'):
                 win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, 0x11, 0)   # CTRL
                 time.sleep(0.01)
-                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, self.virtual_key[self.no_shift_char.index('f')], 0)
+                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, 0x46, 0)
                 time.sleep(0.01)
-                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, self.virtual_key[self.no_shift_char.index('f')], 0)
+                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, 0x46, 0)
                 time.sleep(0.01)
                 win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, 0x11, 0)
                 time.sleep(0.01)
+                # win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, VK_CODES['PAGE_DOWN'], 0)
+                # time.sleep(0.01)
+                # win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, VK_CODES['PAGE_DOWN'], 0)
+                # time.sleep(0.01)
                 # my_keyboard.press(Key.ctrl)
                 # my_keyboard.press('f')
                 # my_keyboard.release('f')
@@ -236,9 +295,9 @@ class BG:
                     time.sleep(cmd_speed)
                 return
             elif (my_str == 'enter_key'):
-                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, 0x0D, 0)
+                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYDOWN, VK_CODES['ENTER'], 0)
                 time.sleep(0.01)
-                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, 0x0D, 0)
+                win32api.SendMessage(self.FrameArea_hwnd, win32con.WM_KEYUP, VK_CODES['ENTER'], 0)
                 time.sleep(0.01)
                 time.sleep(cmd_speed)
                 return

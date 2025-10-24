@@ -12,6 +12,7 @@ import io
 import shutil
 # from multiprocessing import Array, Value
 from threading import Thread, Lock
+import ctypes
 
 from scripts.gen_dataset_fast import gen_data
 from scripts.gen_training_data_fast import gen_train
@@ -22,7 +23,7 @@ from scripts.keyboard_mouse_ctrl import my_type, mouse_click, open_vim, quit_vim
 
 class Inference:
     def __init__(self, calibration=False):
-        self.set_up(calibration)
+        # self.set_up(calibration)
         self.img_lock = Lock()
         self.img_is_new = False
         self.thread_img = ''
@@ -37,8 +38,9 @@ class Inference:
         # --------------------------- detect nx ------------------------ #
         self.hwnd, self.is_nx_active, self.another_monitor = detect_nx()
         if self.is_nx_active == False:
-            print('not found NoMachine')
-            sys.exit()
+            # print('not found NoMachine')
+            # sys.exit()
+            return False
 
         # --------------------------- load cfg  ------------------------ #
         config = load_cfg()
@@ -79,14 +81,15 @@ class Inference:
             self.y1 = int(config['DEFAULT']['y1'])
             self.x2 = int(config['DEFAULT']['x2'])
             self.y2 = int(config['DEFAULT']['y2'])
-            if self.another_monitor:
-                self.x1 += 1920
-                self.x2 += 1920
         else:
             self.x1 = int(config['cust']['x1'])
             self.y1 = int(config['cust']['y1'])
             self.x2 = int(config['cust']['x2'])
             self.y2 = int(config['cust']['y2'])
+
+        if self.another_monitor:
+            self.x1 += 1920
+            self.x2 += 1920
 
 
         self.vim_text_bias_width = 8         # There are 8 chars(w*8 pixels) in front of the text after you use vim -u NONE open file and :set nu
@@ -97,6 +100,7 @@ class Inference:
         self.wait_correct_num = 0            # flag
         self.log_flag = 0                    # flag : log on -> log_flag = 1
         self.log_cou = 0
+        return True
 
     def set_bg_class(self, bg):
         self.bg = bg
@@ -109,7 +113,16 @@ class Inference:
         self.horizontal_num = (self.x2 - self.x1) // self.w
 
     def active_nx(self, sec=0.5):
-        active_window(self.hwnd)
+        print(self.hwnd)
+        # active_window(self.hwnd)
+        if self.hwnd != ctypes.windll.user32.GetForegroundWindow():
+            foreground_window = ctypes.windll.user32.GetForegroundWindow()
+            current_thread = ctypes.windll.kernel32.GetCurrentThreadId()
+            target_thread = ctypes.windll.user32.GetWindowThreadProcessId(foreground_window, None)  # 獲取目標窗口的線程ID
+            ctypes.windll.user32.AttachThreadInput(target_thread, current_thread, True)             # 附加線程輸入
+            ctypes.windll.user32.SetForegroundWindow(self.hwnd)
+            ctypes.windll.user32.BringWindowToTop(self.hwnd)
+            ctypes.windll.user32.AttachThreadInput(target_thread, current_thread, False)            # 分離線程輸入
         time.sleep(sec)
     
     def mouse_click_in_middle_NX(self):
@@ -232,58 +245,17 @@ class Inference:
         self.bg.nx_bg_quit_vim()
         return my_str
 
-    '''
-    def mp_screen_binary(self):
-        old_str = ''
-        new_str = ''
-        idx = 0
-        while(True):
-            img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
-            img_np = np.array(img)
-            frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
-            new_str = ''
-            for i in range(7):
-                crop_img = frame[0:self.h, i*self.w:(i+1)*self.w]
-                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
-                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
-
-                mid = (crop_img.flatten() / 255).astype('uint8')
-                result_arr = np.abs(self.img_arr_binary - mid)
-                result_sum = np.sum(result_arr, axis=1)
-                result_idx = np.argmin(result_sum)
-                new_str += self.char_list_binary[result_idx]
-            print(new_str)
-            if new_str != old_str:
-                crop_img = frame[self.h:self.h*2, 0:self.w]
-                bg_color = crop_img[0, 0]   # assume [0, 0] is background color
-                crop_img = np.where(crop_img == bg_color, 0, 255).astype('uint8')
-
-                mid = (crop_img.flatten() / 255).astype('uint8')
-                result_arr = np.abs(self.img_arr_binary - mid)
-                result_sum = np.sum(result_arr, axis=1)
-                result_idx = np.argmin(result_sum)
-                if self.char_list_binary[result_idx] == '~':
-                    print('end')
-                    break
-                else:
-                    old_str = new_str
-                    print('send frame to shared_memory')
-                    cv2.imwrite(f'{idx}.png', frame)
-                    idx += 1
-                    self.bg.nx_bg_type('pagedown_key', nodelay=True)
-        # cv2.imwrite(f'test.png', crop_img)
-    '''
-        
     def fast_screen(self):
         old_str = ''
         new_str = ''
         # idx = 0
-        while(True):
+        while True:
             if get_exit_flag() == 1:
                 break
             # img = ImageGrab.grab(bbox=(self.x1, self.y1, self.x2, self.y2), all_screens=True)
             # img_np = np.array(img)
             # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+            # start_time = time.perf_counter()
             frame = self.screen(vim_mode=True)
             new_str = ''
             for i in range(7):
@@ -325,6 +297,7 @@ class Inference:
                 else:
                     old_str = new_str
                     # print('ready to send frame to shared_memory')
+                    # print(f'fast_screen, infer time: {time.perf_counter() - start_time:.4f} sec')
                     while True:
                         if get_exit_flag() == 1:
                             break
@@ -335,7 +308,7 @@ class Inference:
                             self.img_lock.release()
                             break
                         else:
-                            # print('wait detect img')
+                            # print('fast_screen, wait detect img')
                             time.sleep(0.1)
                     # cv2.imwrite(f'{idx}.png', frame)
                     # idx += 1
@@ -356,8 +329,8 @@ class Inference:
 
         # cmd = f'python to_binary.py 180 {input_file} {input_file}.ttt'
         # cmd = f'/rsc/R7227/.local/open/file_dump 180 {input_file} {input_file}.ttt'
-        cmd = f'/rsc/R7227/o/file_dump -f 180 {input_file}'
-        # cmd = f'python file_dump.py -f 180 {input_file}'
+        # cmd = f'/rsc/R7227/o/file_dump -f 180 {input_file}'
+        cmd = f'python file_dump.py -f 180 {input_file}'
         self.bg.nx_bg_type(cmd)
         self.bg.nx_bg_type('enter_key')
         # idx = 0
@@ -418,6 +391,7 @@ class Inference:
         self.bg.nx_bg_type('enter_key')
         self.bg.nx_bg_type(':hi Normal ctermfg=white ctermbg=black')
         self.bg.nx_bg_type('enter_key')
+        time.sleep(0.2)
 
         t = Thread(target=self.fast_screen, daemon=True)
         t.start()
@@ -438,44 +412,37 @@ class Inference:
                 # print(img.shape)
                 # cv2.imwrite(f'target.png', img)
                 temp_str, file_eof, line_cou = self.infer_binary(img, file_eof=file_eof, line_cou=line_cou)
+                none_return_line_str = temp_str.replace('\n', '')
                 # temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
-                my_str += temp_str
+                my_str += none_return_line_str
                 # print(f'cost time:{time.perf_counter() - start_time}')
                 # my_type('pagedown_key')
             else:
                 print('wait new img')
                 time.sleep(0.1)
 
-        self.bg.nx_bg_quit_vim()
         # my_type(f'rm -f {input_file}.ttt')
         # my_type('enter_key')
 
-        # print(my_str)
+        print(my_str.strip())      # encoded string
 
-        binary_data_base64 = base64.b64decode(my_str.strip())
+        # binary_data_base64 = base64.b64decode(my_str.strip())
+        binary_data_base85 = base64.b85decode(my_str.strip())
         # print(binary_data_base64)
-        if binary_data_base64 != b'':
+        if binary_data_base85 != b'':
             # method 1: 不寫檔, 直接用byte string傳遞, 解壓縮
-            binary_data = lzma.decompress(binary_data_base64)
+            binary_data = lzma.decompress(binary_data_base85)
             # print(binary_data)
             with open(export_dir_name + output_file, 'wb') as f_out:
                 f_out.write(binary_data)
-
-            # method 2: 寫檔 讀檔 解壓縮
-            # with open(export_dir_name + 'temp_base64.xz', 'wb') as f:
-            #     f.write(binary_data_base64)
-
-            # with lzma.open(export_dir_name + 'temp_base64.xz', 'rb') as f_in, open(export_dir_name + output_file, 'wb') as f_out:
-            #     shutil.copyfileobj(f_in, f_out)
-            
-            # os.remove(export_dir_name + 'temp_base64.xz')
         else:
             with open(export_dir_name + output_file, 'w') as f_out:
                 f_out.write('')
 
         t.join()
+        self.bg.nx_bg_quit_vim()
 
-        return binary_data_base64
+        return binary_data_base85
 
     def folder_mode_binary(self, input_file, export_dir_name):
         self.reset_var()
@@ -528,6 +495,7 @@ class Inference:
         self.bg.nx_bg_type('enter_key')
         self.bg.nx_bg_type(':hi Normal ctermfg=white ctermbg=black')
         self.bg.nx_bg_type('enter_key')
+        time.sleep(0.2)
 
         t = Thread(target=self.fast_screen, daemon=True)
         t.start()
@@ -541,6 +509,7 @@ class Inference:
             if get_exit_flag() == 1:
                 break
             if self.img_is_new:
+                # start_time = time.perf_counter()
                 self.img_lock.acquire()
                 img = self.thread_img.copy()
                 self.img_is_new = False
@@ -548,27 +517,24 @@ class Inference:
                 # print(img.shape)
                 # cv2.imwrite(f'target.png', img)
                 temp_str, file_eof, line_cou = self.infer_binary(img, file_eof=file_eof, line_cou=line_cou)
+                none_return_line_str = temp_str.replace('\n', '')
                 # temp_str, file_eof, line_cou = self.infer(img, file_eof=file_eof, line_cou=line_cou)
-                my_str += temp_str
+                my_str += none_return_line_str
                 # print(f'cost time:{time.perf_counter() - start_time}')
                 # my_type('pagedown_key')
+                # print(f'folder_mode_binary, infer time: {time.perf_counter() - start_time:.4f} sec')
             else:
-                print('wait new img')
+                print('folder_mode_binary, wait new img')
                 time.sleep(0.1)
 
-        self.bg.nx_bg_quit_vim()
 
         # print(my_str)
 
-        binary_data_base64 = base64.b64decode(my_str.strip())
+        # binary_data_base64 = base64.b64decode(my_str.strip())
+        binary_data_base85 = base64.b85decode(my_str.strip())
         # print(binary_data_base64)
-        if binary_data_base64 != b'':
-            # with open(export_dir_name + 'temp_base64.tar.xz', 'wb') as f:
-            #     f.write(binary_data_base64)
-            # with tarfile.open(export_dir_name + 'temp_base64.tar.xz', mode='r:xz') as file:
-            #     file.extractall(path=export_dir_name)
-
-            file_like_object = io.BytesIO(binary_data_base64)
+        if binary_data_base85 != b'':
+            file_like_object = io.BytesIO(binary_data_base85)
             with tarfile.open(fileobj=file_like_object, mode='r:xz') as file:
                 file.extractall(path=export_dir_name)
 
@@ -578,8 +544,9 @@ class Inference:
             #     f_out.write('')
 
         t.join()
+        self.bg.nx_bg_quit_vim()
 
-        return binary_data_base64
+        return binary_data_base85
 
 
     def write_in_file(self, export_dir_name, file_name, my_str=''):
