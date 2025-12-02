@@ -5,6 +5,9 @@
 .env.test.local
 .env.production.local
 
+# Virtual environments
+.venv
+
 __pycache__/
 .vscode/
 
